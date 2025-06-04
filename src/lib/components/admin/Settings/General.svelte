@@ -309,6 +309,29 @@
 						{$i18n.t('After verify, will auto change to role User')}
 					</div>
 
+					<div class="mb-2.5 flex w-full justify-between pr-2">
+						<div class="self-center text-xs font-medium">
+							启用 reCAPTCHA 验证
+						</div>
+
+						<Switch bind:state={adminConfig.ENABLE_RECAPTCHA} />
+					</div>
+
+					{#if adminConfig.ENABLE_RECAPTCHA}
+						<div class="mb-2.5 flex w-full flex-col pr-2">
+							<div class=" text-xs font-medium">
+								reCAPTCHA Site Key
+							</div>
+
+							<input
+								class="w-full mt-1 rounded-lg text-sm dark:text-gray-300 bg-transparent outline-hidden"
+								type="text"
+								placeholder="输入 reCAPTCHA Site Key"
+								bind:value={adminConfig.RECAPTCHA_SITE_KEY}
+							/>
+						</div>
+					{/if}
+
 					<div class="mb-2.5 flex w-full flex-col pr-2">
 						<div class=" text-xs font-medium">
 							{$i18n.t('Sign Up Email Domain Whitelist')}
