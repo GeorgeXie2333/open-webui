@@ -41,6 +41,15 @@ ghcr.io/u8f69/open-webui:<版本号>
 
 ## 拓展配置
 
+### HTTP Client Read Buffer Size
+
+当有遇到 `Chunk too big` 报错时，可以适当调节这里的大小
+
+```
+# 默认是 64KB
+AIOHTTP_CLIENT_READ_BUFFER_SIZE=65536
+```
+
 ### 注册邮箱验证
 
 ![verify email](./docs/signup_verify.png)

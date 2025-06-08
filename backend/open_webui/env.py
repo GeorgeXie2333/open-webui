@@ -457,6 +457,10 @@ AIOHTTP_CLIENT_SESSION_TOOL_SERVER_SSL = (
     os.environ.get("AIOHTTP_CLIENT_SESSION_TOOL_SERVER_SSL", "True").lower() == "true"
 )
 
+AIOHTTP_CLIENT_READ_BUFFER_SIZE = int(
+    os.environ.get("AIOHTTP_CLIENT_READ_BUFFER_SIZE", 2**16)
+)
+
 
 ####################################
 # SENTENCE TRANSFORMERS

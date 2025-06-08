@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.x] - 2025.06.03
+
+### Added
+
+- 支持自定义模型 Logo URL
+- 增加 HTTP Read Buffer Size 配置
+- 请求异常时跳过计费
+
 ## [0.6.13.1] - 2025.05.30
 
 ### Added

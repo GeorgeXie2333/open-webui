@@ -152,6 +152,7 @@ class CreditDeduct:
         is_stream: bool,
         is_embedding: bool = False,
     ) -> None:
+        self.is_error = False
         self.remote_id = ""
         self.user = user
         self.model_id = model_id
@@ -180,6 +181,8 @@ class CreditDeduct:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_val or self.is_error:
+            return
         Credits.add_credit_by_user_id(
             form_data=AddCreditForm(
                 user_id=self.user.id,
@@ -192,6 +195,7 @@ class CreditDeduct:
                         "request_unit_price": float(self.request_unit_price),
                         "feature_price": float(self.feature_price),
                         "features": list(self.features),
+                        "is_calculate": not self.is_official_usage,
                         **self.usage.model_dump(exclude_unset=True, exclude_none=True),
                     },
                     api_params={
@@ -255,6 +259,7 @@ class CreditDeduct:
                 "request_price": float(self.request_price),
                 "feature_price": float(self.feature_price),
                 "is_calculate": not self.is_official_usage,
+                "is_error": self.is_error,
             },
             **self.usage.model_dump(exclude_unset=True, exclude_none=True),
         }
@@ -315,6 +320,11 @@ class CreditDeduct:
                 return
             # validate
             response = ChatCompletion.model_validate(_response)
+
+        # check for error
+        if _response.get("error"):
+            self.is_error = True
+            return
 
         # record is
         self.remote_id = getattr(response, "id", "")

@@ -477,6 +477,16 @@
 								/>
 							</div>
 						</div>
+
+						<div class="flex-1">
+							<div>
+								<input
+									class="text-xs w-full bg-transparent text-gray-500 outline-hidden"
+									placeholder={$i18n.t('Model Logo URL')}
+									bind:value={info.meta.profile_image_url}
+								/>
+							</div>
+						</div>
 					</div>
 
 					{#if preset}

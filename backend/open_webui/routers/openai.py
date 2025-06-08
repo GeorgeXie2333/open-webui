@@ -23,6 +23,7 @@ from open_webui.env import (
     AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST,
     ENABLE_FORWARD_USER_INFO_HEADERS,
     BYPASS_MODEL_ACCESS_CONTROL,
+    AIOHTTP_CLIENT_READ_BUFFER_SIZE,
 )
 from open_webui.models.users import UserModel
 
@@ -833,7 +834,9 @@ async def generate_chat_completion(
 
     try:
         session = aiohttp.ClientSession(
-            trust_env=True, timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
+            trust_env=True,
+            timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT),
+            read_bufsize=AIOHTTP_CLIENT_READ_BUFFER_SIZE,
         )
 
         r = await session.request(
