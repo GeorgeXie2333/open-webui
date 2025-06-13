@@ -312,8 +312,8 @@
 		const start = new Date();
 		start.setDate(end.getDate() - 7);
 
-		const thirtyDaysAgo = new Date();
-		thirtyDaysAgo.setDate(end.getDate() - 30);
+		const minDays = new Date();
+		minDays.setDate(end.getDate() - 180);
 		const tomorrow = new Date();
 		tomorrow.setDate(end.getDate() + 1);
 
@@ -327,7 +327,7 @@
 			defaultDate: [start, end],
 			defaultHour: 0,
 			maxDate: tomorrow,
-			minDate: thirtyDaysAgo,
+			minDate: minDays,
 			position: 'auto center',
 			showMonths: 2,
 			time_24hr: true,

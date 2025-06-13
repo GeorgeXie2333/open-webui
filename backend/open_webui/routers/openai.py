@@ -910,6 +910,120 @@ async def generate_chat_completion(
             await session.close()
 
 
+async def embeddings(request: Request, form_data: dict, user):
+    """
+    Calls the embeddings endpoint for OpenAI-compatible providers.
+
+    Args:
+        request (Request): The FastAPI request context.
+        form_data (dict): OpenAI-compatible embeddings payload.
+        user (UserModel): The authenticated user.
+
+    Returns:
+        dict: OpenAI-compatible embeddings response.
+    """
+
+    # check credit
+    if user:
+        check_credit_by_user_id(user_id=user.id, form_data={}, is_embedding=True)
+
+    idx = 0
+    # Prepare payload/body
+    body = json.dumps(form_data)
+    # Find correct backend url/key based on model
+    await get_all_models(request, user=user)
+    model_id = form_data.get("model")
+    models = request.app.state.OPENAI_MODELS
+    if model_id in models:
+        idx = models[model_id]["urlIdx"]
+    url = request.app.state.config.OPENAI_API_BASE_URLS[idx]
+    key = request.app.state.config.OPENAI_API_KEYS[idx]
+    r = None
+    session = None
+    streaming = False
+    try:
+        session = aiohttp.ClientSession(trust_env=True)
+        r = await session.request(
+            method="POST",
+            url=f"{url}/embeddings",
+            data=body,
+            headers={
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+                **(
+                    {
+                        "X-OpenWebUI-User-Name": user.name,
+                        "X-OpenWebUI-User-Id": user.id,
+                        "X-OpenWebUI-User-Email": user.email,
+                        "X-OpenWebUI-User-Role": user.role,
+                    }
+                    if ENABLE_FORWARD_USER_INFO_HEADERS and user
+                    else {}
+                ),
+            },
+        )
+        r.raise_for_status()
+        if "text/event-stream" in r.headers.get("Content-Type", ""):
+            if user:
+                with CreditDeduct(
+                    user=user,
+                    model_id=model_id,
+                    body={
+                        "messages": [{"role": "user", "content": form_data["input"]}]
+                    },
+                    is_stream=False,
+                    is_embedding=True,
+                ) as credit_deduct:
+                    credit_deduct.run(form_data["input"])
+            streaming = True
+            return StreamingResponse(
+                r.content,
+                status_code=r.status,
+                headers=dict(r.headers),
+                background=BackgroundTask(
+                    cleanup_response, response=r, session=session
+                ),
+            )
+        else:
+            response_data = await r.json()
+            if user:
+                with CreditDeduct(
+                    user=user,
+                    model_id=model_id,
+                    body={
+                        "messages": [{"role": "user", "content": form_data["input"]}]
+                    },
+                    is_stream=False,
+                    is_embedding=True,
+                ) as credit_deduct:
+                    if "usage" in response_data:
+                        prompt_tokens = response_data["usage"]["prompt_tokens"]
+                        credit_deduct.usage.prompt_tokens = prompt_tokens
+                        credit_deduct.usage.total_tokens = prompt_tokens
+                    else:
+                        credit_deduct.run(form_data["input"])
+            return response_data
+    except Exception as e:
+        log.exception(e)
+        detail = None
+        if r is not None:
+            try:
+                res = await r.json()
+                if "error" in res:
+                    detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
+            except Exception:
+                detail = f"External: {e}"
+        raise HTTPException(
+            status_code=r.status if r else 500,
+            detail=detail if detail else "Open WebUI: Server Connection Error",
+        )
+    finally:
+        if not streaming and session:
+            if r:
+                r.close()
+            await session.close()
+
+
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
     """

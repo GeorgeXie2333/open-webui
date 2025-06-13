@@ -338,7 +338,7 @@ export const userSignOut = async () => {
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
-			return res;
+			return res.json();
 		})
 		.catch((err) => {
 			console.error(err);

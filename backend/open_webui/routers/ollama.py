@@ -38,6 +38,7 @@ from starlette.background import BackgroundTask
 
 
 from open_webui.models.models import Models
+from open_webui.utils.credit.usage import CreditDeduct
 from open_webui.utils.credit.utils import check_credit_by_user_id
 from open_webui.utils.misc import (
     calculate_sha256,
@@ -1076,6 +1077,10 @@ async def embeddings(
 ):
     log.info(f"generate_ollama_embeddings {form_data}")
 
+    # check credit
+    if user:
+        check_credit_by_user_id(user_id=user.id, form_data={}, is_embedding=True)
+
     if url_idx is None:
         await get_all_models(request, user=user)
         models = request.app.state.OLLAMA_MODELS
@@ -1127,6 +1132,19 @@ async def embeddings(
         r.raise_for_status()
 
         data = r.json()
+
+        # calculate usage
+        if user:
+            input_text = form_data.prompt
+            with CreditDeduct(
+                user=user,
+                model_id=form_data.model,
+                body={"messages": [{"role": "user", "content": input_text}]},
+                is_stream=False,
+                is_embedding=True,
+            ) as credit_deduct:
+                credit_deduct.run(input_text)
+
         return data
     except Exception as e:
         log.exception(e)
@@ -1233,6 +1251,9 @@ class GenerateChatCompletionForm(BaseModel):
     stream: Optional[bool] = True
     keep_alive: Optional[Union[int, str]] = None
     tools: Optional[list[dict]] = None
+    model_config = ConfigDict(
+        extra="allow",
+    )
 
 
 async def get_ollama_url(request: Request, model: str, url_idx: Optional[int] = None):
@@ -1270,7 +1291,9 @@ async def generate_chat_completion(
             detail=str(e),
         )
 
-    payload = {**form_data.model_dump(exclude_none=True)}
+    if isinstance(form_data, BaseModel):
+        payload = {**form_data.model_dump(exclude_none=True)}
+
     if "metadata" in payload:
         del payload["metadata"]
 
@@ -1286,11 +1309,7 @@ async def generate_chat_completion(
         if params:
             system = params.pop("system", None)
 
-            # Unlike OpenAI, Ollama does not support params directly in the body
-            payload["options"] = apply_model_params_to_body_ollama(
-                params, (payload.get("options", {}) or {})
-            )
-
+            payload = apply_model_params_to_body_ollama(params, payload)
             payload = apply_model_system_prompt_to_body(system, payload, metadata, user)
 
         # Check if user has access to the model
@@ -1324,7 +1343,7 @@ async def generate_chat_completion(
     prefix_id = api_config.get("prefix_id", None)
     if prefix_id:
         payload["model"] = payload["model"].replace(f"{prefix_id}.", "")
-    # payload["keep_alive"] = -1 # keep alive forever
+
     return await send_post_request(
         url=f"{url}/api/chat",
         payload=json.dumps(payload),
