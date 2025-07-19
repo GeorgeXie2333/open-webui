@@ -349,6 +349,8 @@ export const userSignOut = async () => {
 	if (error) {
 		throw error;
 	}
+
+	sessionStorage.clear();
 	return res;
 };
 
