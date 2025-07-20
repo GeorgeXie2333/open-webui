@@ -16,6 +16,7 @@ from open_webui.models.credits import (
 from open_webui.models.users import (
     UserModel,
     UserListResponse,
+    UserInfoListResponse,
     UserRoleUpdateForm,
     Users,
     UserSettings,
@@ -102,7 +103,7 @@ async def get_users(
     return user_data
 
 
-@router.get("/all", response_model=UserListResponse)
+@router.get("/all", response_model=UserInfoListResponse)
 async def get_all_users(
     user=Depends(get_admin_user),
 ):
