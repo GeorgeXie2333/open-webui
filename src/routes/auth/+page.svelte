@@ -1,7 +1,4 @@
 <script>
-	import DOMPurify from 'dompurify';
-	import { marked } from 'marked';
-
 	import { toast } from 'svelte-sonner';
 
 	import { onMount, getContext, tick } from 'svelte';
@@ -138,10 +135,10 @@
 
 			if (isDarkMode) {
 				const darkImage = new Image();
-				darkImage.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
+				darkImage.src = '/static/favicon-dark.png';
 
 				darkImage.onload = () => {
-					logo.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
+					logo.src = '/static/favicon-dark.png';
 					logo.style.filter = ''; // Ensure no inversion is applied if favicon-dark.png exists
 				};
 
@@ -205,7 +202,7 @@
 		<div
 			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white"
 		>
-			<div class="w-full px-10 min-h-screen flex flex-col text-center">
+			<div class="w-full sm:max-w-md px-10 min-h-screen flex flex-col text-center">
 				{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
 					<div class=" my-auto pb-10 w-full">
 						<div class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-3xl p-8 border border-gray-200/30 dark:border-gray-700/30 shadow-2xl shadow-black/10 dark:shadow-black/50">
@@ -216,8 +213,6 @@
 									{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
 								</div>
 
-							<div>
-								<Spinner className="size-5" />
 								<div>
 									<Spinner />
 								</div>
@@ -256,15 +251,6 @@
 										</div>
 									{/if}
 								</div>
-									{#if $config?.onboarding ?? false}
-										<div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
-											ⓘ {$WEBUI_NAME}
-											{$i18n.t(
-												'does not make any external connections, and your data stays securely on your locally hosted server.'
-											)}
-										</div>
-									{/if}
-								</div>
 
 								{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
 									<div class="flex flex-col mt-4">
@@ -284,58 +270,7 @@
 												/>
 											</div>
 										{/if}
-								{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
-									<div class="flex flex-col mt-4">
-										{#if mode === 'signup'}
-											<div class="mb-2">
-												<label for="name" class="text-sm font-medium text-left mb-1 block"
-													>{$i18n.t('Name')}</label
-												>
-												<input
-													bind:value={name}
-													type="text"
-													id="name"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-													autocomplete="name"
-													placeholder={$i18n.t('Enter Your Full Name')}
-													required
-												/>
-											</div>
-										{/if}
 
-										{#if mode === 'ldap'}
-											<div class="mb-2">
-												<label for="username" class="text-sm font-medium text-left mb-1 block"
-													>{$i18n.t('Username')}</label
-												>
-												<input
-													bind:value={ldapUsername}
-													type="text"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-													autocomplete="username"
-													name="username"
-													id="username"
-													placeholder={$i18n.t('Enter Your Username')}
-													required
-												/>
-											</div>
-										{:else}
-											<div class="mb-2">
-												<label for="email" class="text-sm font-medium text-left mb-1 block"
-													>{$i18n.t('Email')}</label
-												>
-												<input
-													bind:value={email}
-													type="email"
-													id="email"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-													autocomplete="email"
-													name="email"
-													placeholder={$i18n.t('Enter Your Email')}
-													required
-												/>
-											</div>
-										{/if}
 										{#if mode === 'ldap'}
 											<div class="mb-2">
 												<label for="username" class="text-sm font-medium text-left mb-1 block"
@@ -435,11 +370,6 @@
 													{mode === 'signin'
 														? $i18n.t("Don't have an account?")
 														: $i18n.t('Already have an account?')}
-											{#if $config?.features.enable_signup && !($config?.onboarding ?? false)}
-												<div class=" mt-4 text-sm text-center">
-													{mode === 'signin'
-														? $i18n.t("Don't have an account?")
-														: $i18n.t('Already have an account?')}
 
 													<button
 														class=" font-medium underline"
@@ -460,35 +390,7 @@
 									{/if}
 								</div>
 							</form>
-													<button
-														class=" font-medium underline"
-														type="button"
-														on:click={() => {
-															if (mode === 'signin') {
-																mode = 'signup';
-															} else {
-																mode = 'signin';
-															}
-														}}
-													>
-														{mode === 'signin' ? $i18n.t('Sign up') : $i18n.t('Sign in')}
-													</button>
-												</div>
-											{/if}
-										{/if}
-									{/if}
-								</div>
-							</form>
 
-							{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
-								<div class="inline-flex items-center justify-center w-full">
-									<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
-									{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
-										<span
-											class="px-3 text-sm font-medium text-gray-900 dark:text-white bg-transparent"
-											>{$i18n.t('or')}</span
-										>
-									{/if}
 							{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
 								<div class="inline-flex items-center justify-center w-full">
 									<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
@@ -590,15 +492,6 @@
 												/>
 											</svg>
 
-											<span
-												>{$i18n.t('Continue with {{provider}}', {
-													provider: $config?.oauth?.providers?.oidc ?? 'SSO'
-												})}</span
-											>
-										</button>
-									{/if}
-								</div>
-							{/if}
 											<span
 												>{$i18n.t('Continue with {{provider}}', {
 													provider: $config?.oauth?.providers?.oidc ?? 'SSO'
