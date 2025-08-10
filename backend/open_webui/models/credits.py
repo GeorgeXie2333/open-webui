@@ -327,5 +327,16 @@ class CreditLogTable:
         except Exception:
             return []
 
+    def delete_log_by_timestamp(self, timestamp: int) -> int:
+        try:
+            with get_db() as db:
+                query = db.query(CreditLog).filter(CreditLog.created_at < timestamp)
+                total = query.count()
+                query.delete()
+                db.commit()
+                return total
+        except Exception as err:
+            raise HTTPException(status_code=500, detail=str(err))
+
 
 CreditLogs = CreditLogTable()

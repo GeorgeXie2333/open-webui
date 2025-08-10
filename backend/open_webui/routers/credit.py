@@ -7,7 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from open_webui.config import EZFP_CALLBACK_HOST
 from open_webui.env import SRC_LOG_LEVELS
@@ -51,6 +51,23 @@ async def list_credit_logs(
         )
     else:
         return CreditLogs.get_credit_log_by_page(user_ids=[user.id], offset=0, limit=10)
+
+
+class DeleteLogsForm(BaseModel):
+    timestamp: int = Field(gt=0)
+
+
+class DeleteLogsResponse(BaseModel):
+    affect_rows: int
+
+
+@router.delete("/logs")
+async def update_model_price(
+    form_data: DeleteLogsForm, _: UserModel = Depends(get_admin_user)
+) -> DeleteLogsResponse:
+    return DeleteLogsResponse(
+        affect_rows=CreditLogs.delete_log_by_timestamp(form_data.timestamp)
+    )
 
 
 @router.get("/all_logs")

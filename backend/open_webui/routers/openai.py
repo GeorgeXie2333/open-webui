@@ -9,9 +9,13 @@ from aiocache import cached
 import requests
 from urllib.parse import quote
 
-from fastapi import Depends, FastAPI, HTTPException, Request, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import Depends, HTTPException, Request, APIRouter
+from fastapi.responses import (
+    FileResponse,
+    StreamingResponse,
+    JSONResponse,
+    PlainTextResponse,
+)
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
@@ -95,12 +99,12 @@ async def cleanup_response(
         await session.close()
 
 
-def openai_o_series_handler(payload):
+def openai_reasoning_model_handler(payload):
     """
-    Handle "o" series specific parameters
+    Handle reasoning model specific parameters
     """
     if "max_tokens" in payload:
-        # Convert "max_tokens" to "max_completion_tokens" for all o-series models
+        # Convert "max_tokens" to "max_completion_tokens" for all reasoning models
         payload["max_completion_tokens"] = payload["max_tokens"]
         del payload["max_tokens"]
 
@@ -362,7 +366,9 @@ async def get_all_models_responses(request: Request, user: UserModel) -> list:
                 response if isinstance(response, list) else response.get("data", [])
             ):
                 if prefix_id:
-                    model["id"] = f"{prefix_id}.{model['id']}"
+                    model["id"] = (
+                        f"{prefix_id}.{model.get('id', model.get('name', ''))}"
+                    )
 
                 if tags:
                     model["tags"] = tags
@@ -592,15 +598,21 @@ async def verify_connection(
                     headers=headers,
                     ssl=AIOHTTP_CLIENT_SESSION_SSL,
                 ) as r:
-                    if r.status != 200:
-                        # Extract response error details if available
-                        error_detail = f"HTTP Error: {r.status}"
-                        res = await r.json()
-                        if "error" in res:
-                            error_detail = f"External Error: {res['error']}"
-                        raise Exception(error_detail)
+                    try:
+                        response_data = await r.json()
+                    except Exception:
+                        response_data = await r.text()
 
-                    response_data = await r.json()
+                    if r.status != 200:
+                        if isinstance(response_data, (dict, list)):
+                            return JSONResponse(
+                                status_code=r.status, content=response_data
+                            )
+                        else:
+                            return PlainTextResponse(
+                                status_code=r.status, content=response_data
+                            )
+
                     return response_data
             else:
                 headers["Authorization"] = f"Bearer {key}"
@@ -610,15 +622,21 @@ async def verify_connection(
                     headers=headers,
                     ssl=AIOHTTP_CLIENT_SESSION_SSL,
                 ) as r:
-                    if r.status != 200:
-                        # Extract response error details if available
-                        error_detail = f"HTTP Error: {r.status}"
-                        res = await r.json()
-                        if "error" in res:
-                            error_detail = f"External Error: {res['error']}"
-                        raise Exception(error_detail)
+                    try:
+                        response_data = await r.json()
+                    except Exception:
+                        response_data = await r.text()
 
-                    response_data = await r.json()
+                    if r.status != 200:
+                        if isinstance(response_data, (dict, list)):
+                            return JSONResponse(
+                                status_code=r.status, content=response_data
+                            )
+                        else:
+                            return PlainTextResponse(
+                                status_code=r.status, content=response_data
+                            )
+
                     return response_data
 
         except aiohttp.ClientError as e:
@@ -629,8 +647,9 @@ async def verify_connection(
             )
         except Exception as e:
             log.exception(f"Unexpected error: {e}")
-            error_detail = f"Unexpected error: {str(e)}"
-            raise HTTPException(status_code=500, detail=error_detail)
+            raise HTTPException(
+                status_code=500, detail="Open WebUI: Server Connection Error"
+            )
 
 
 def get_azure_allowed_params(api_version: str) -> set[str]:
@@ -788,10 +807,15 @@ async def generate_chat_completion(
     url = request.app.state.config.OPENAI_API_BASE_URLS[idx]
     key = request.app.state.config.OPENAI_API_KEYS[idx]
 
+    # clean model name
+    # split / for openrouter.ai models
+    # split . for pipe models
+    real_model_name = (payload["model"].lower().split("/", 1)[-1]).split(".", 1)[-1]
+
     # Check if model is from "o" series
-    is_o_series = payload["model"].lower().startswith(("o1", "o3", "o4"))
-    if is_o_series:
-        payload = openai_o_series_handler(payload)
+    is_reasoning_model = real_model_name.startswith(("o1", "o3", "o4", "gpt-5"))
+    if is_reasoning_model:
+        payload = openai_reasoning_model_handler(payload)
     elif "api.openai.com" not in url:
         # Remove "max_completion_tokens" from the payload for backward compatibility
         if "max_completion_tokens" in payload:
@@ -898,7 +922,11 @@ async def generate_chat_completion(
                 log.error(e)
                 response = await r.text()
 
-            r.raise_for_status()
+            if r.status >= 400:
+                if isinstance(response, (dict, list)):
+                    return JSONResponse(status_code=r.status, content=response)
+                else:
+                    return PlainTextResponse(status_code=r.status, content=response)
 
             with CreditDeduct(
                 user=user,
@@ -911,16 +939,9 @@ async def generate_chat_completion(
     except Exception as e:
         log.exception(e)
 
-        detail = None
-        if isinstance(response, dict):
-            if "error" in response:
-                detail = f"{response['error']['message'] if 'message' in response['error'] else response['error']}"
-        elif isinstance(response, str):
-            detail = response
-
         raise HTTPException(
             status_code=r.status if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail="Open WebUI: Server Connection Error",
         )
     finally:
         if not streaming:
@@ -979,7 +1000,7 @@ async def embeddings(request: Request, form_data: dict, user):
                 ),
             },
         )
-        r.raise_for_status()
+
         if "text/event-stream" in r.headers.get("Content-Type", ""):
             if user:
                 with CreditDeduct(
@@ -1002,7 +1023,19 @@ async def embeddings(request: Request, form_data: dict, user):
                 ),
             )
         else:
-            response_data = await r.json()
+            try:
+                response_data = await r.json()
+            except Exception:
+                response_data = await r.text()
+
+            if r.status >= 400:
+                if isinstance(response_data, (dict, list)):
+                    return JSONResponse(status_code=r.status, content=response_data)
+                else:
+                    return PlainTextResponse(
+                        status_code=r.status, content=response_data
+                    )
+
             if user:
                 with CreditDeduct(
                     user=user,
@@ -1020,20 +1053,13 @@ async def embeddings(request: Request, form_data: dict, user):
                         credit_deduct.usage.total_tokens = prompt_tokens
                     else:
                         credit_deduct.run(form_data["input"])
+
             return response_data
     except Exception as e:
         log.exception(e)
-        detail = None
-        if r is not None:
-            try:
-                res = await r.json()
-                if "error" in res:
-                    detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
-            except Exception:
-                detail = f"External: {e}"
         raise HTTPException(
             status_code=r.status if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail="Open WebUI: Server Connection Error",
         )
     finally:
         if not streaming:
@@ -1099,7 +1125,6 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             headers=headers,
             ssl=AIOHTTP_CLIENT_SESSION_SSL,
         )
-        r.raise_for_status()
 
         # Check if response is SSE
         if "text/event-stream" in r.headers.get("Content-Type", ""):
@@ -1113,24 +1138,26 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 ),
             )
         else:
-            response_data = await r.json()
+            try:
+                response_data = await r.json()
+            except Exception:
+                response_data = await r.text()
+
+            if r.status >= 400:
+                if isinstance(response_data, (dict, list)):
+                    return JSONResponse(status_code=r.status, content=response_data)
+                else:
+                    return PlainTextResponse(
+                        status_code=r.status, content=response_data
+                    )
+
             return response_data
 
     except Exception as e:
         log.exception(e)
-
-        detail = None
-        if r is not None:
-            try:
-                res = await r.json()
-                log.error(res)
-                if "error" in res:
-                    detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
-            except Exception:
-                detail = f"External: {e}"
         raise HTTPException(
             status_code=r.status if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail="Open WebUI: Server Connection Error",
         )
     finally:
         if not streaming:

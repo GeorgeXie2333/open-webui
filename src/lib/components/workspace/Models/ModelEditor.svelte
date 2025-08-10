@@ -76,6 +76,7 @@
 		},
 		price: {
 			prompt_price: 0,
+			prompt_cache_price: 0,
 			completion_price: 0,
 			request_price: 0,
 			minimum_credit: 0
@@ -122,11 +123,24 @@
 		info.name = name;
 
 		if (id === '') {
-			toast.error('Model ID is required.');
+			toast.error($i18n.t('Model ID is required.'));
+			loading = false;
+
+			return;
 		}
 
 		if (name === '') {
-			toast.error('Model Name is required.');
+			toast.error($i18n.t('Model Name is required.'));
+			loading = false;
+
+			return;
+		}
+
+		if (knowledge.some((item) => item.status === 'uploading')) {
+			toast.error($i18n.t('Please wait until all files are uploaded.'));
+			loading = false;
+
+			return;
 		}
 
 		info.params = { ...info.params, ...params };
@@ -276,6 +290,7 @@
 			if (!info.price) {
 				info.price = {
 					prompt_price: 0,
+					prompt_cache_price: 0,
 					completion_price: 0,
 					request_price: 0,
 					minimum_credit: 0
@@ -539,6 +554,20 @@
 									step="0.0001"
 									min="0"
 									bind:value={info.price.prompt_price}
+									autocomplete="off"
+									required
+								/>
+							</div>
+							<div class="mt-1 flex justify-between text-xs">
+								<span class="min-w-36">
+									{$i18n.t('Prompt Token Cache Price')}
+								</span>
+								<input
+									class="w-full flex flex-1 text-xs bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-hidden"
+									type="number"
+									step="0.0001"
+									min="0"
+									bind:value={info.price.prompt_cache_price}
 									autocomplete="off"
 									required
 								/>

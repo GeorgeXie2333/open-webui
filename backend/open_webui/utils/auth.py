@@ -8,6 +8,13 @@ import hashlib
 import requests
 import os
 
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.asymmetric import ed25519
+from cryptography.hazmat.primitives import serialization
+import json
+
+
 from datetime import datetime, timedelta
 import pytz
 from pytz import UTC
@@ -21,7 +28,11 @@ from open_webui.utils.smtp import send_email
 from open_webui.models.users import Users
 
 from open_webui.constants import ERROR_MESSAGES
+
 from open_webui.env import (
+    OFFLINE_MODE,
+    LICENSE_BLOB,
+    pk,
     WEBUI_SECRET_KEY,
     TRUSTED_SIGNATURE_KEY,
     STATIC_DIR,
@@ -228,7 +239,7 @@ def get_current_user(
         token = request.cookies.get("token")
 
     if token is None:
-        raise HTTPException(status_code=403, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail="Not authenticated")
 
     # auth by api key
     if token.startswith("sk-"):

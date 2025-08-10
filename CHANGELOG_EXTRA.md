@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.20.1] - 2025.08.10
+
+### Added
+
+- 支持配置提示 Token 缓存价格 (管理员面板-设置-模型-模型价格配置)
+- 支持删除历史积分日志 (管理员面板-用户-积分日志)
+- 增加 GPT-5 系列模型的 max_completion_tokens 参数适配
+
+### Changed
+
+- 移除积分统计面板的数字展示
+- 合并官方 0.6.20 改动
+
+### Fixed
+
+- 修复代码解释器运行异常
+
 ## [0.6.18.1] - 2025.07.20
 
 ### Changed

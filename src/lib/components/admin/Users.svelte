@@ -17,7 +17,9 @@
 	$: {
 		const pathParts = $page.url.pathname.split('/');
 		const tabFromPath = pathParts[pathParts.length - 1];
-		selectedTab = ['overview', 'groups'].includes(tabFromPath) ? tabFromPath : 'overview';
+		selectedTab = ['overview', 'groups', 'credit', 'creditLog'].includes(tabFromPath)
+			? tabFromPath
+			: 'overview';
 	}
 
 	$: if (selectedTab) {
@@ -118,7 +120,7 @@
 				? ''
 				: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
 			on:click={() => {
-				selectedTab = 'credit';
+				goto('/admin/users/credit');
 			}}
 		>
 			<div class=" self-center mr-2">
@@ -144,7 +146,7 @@
 				? ''
 				: ' text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'}"
 			on:click={() => {
-				selectedTab = 'creditLog';
+				goto('/admin/users/creditLog');
 			}}
 		>
 			<div class=" self-center mr-2">

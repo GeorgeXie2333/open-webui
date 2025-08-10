@@ -438,11 +438,9 @@ async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
             user = Users.get_user_by_email(email)
             if not user:
                 try:
-                    user_count = Users.get_num_users()
-
                     role = (
                         "admin"
-                        if user_count == 0
+                        if not Users.has_users()
                         else request.app.state.config.DEFAULT_USER_ROLE
                     )
 
@@ -579,7 +577,7 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
         if Users.get_user_by_email(admin_email.lower()):
             user = Auths.authenticate_user(admin_email.lower(), admin_password)
         else:
-            if Users.get_num_users() != 0:
+            if Users.has_users():
                 raise HTTPException(400, detail=ERROR_MESSAGES.EXISTING_USERS)
 
             await signup(
@@ -649,6 +647,8 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
 
 @router.post("/signup", response_model=SessionUserResponse)
 async def signup(request: Request, response: Response, form_data: SignupForm):
+    has_users = Users.has_users()
+
     if WEBUI_AUTH:
         if (
             not request.app.state.config.ENABLE_SIGNUP
@@ -658,7 +658,7 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
                 status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
             )
     else:
-        if Users.get_num_users() != 0:
+        if has_users:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
             )
@@ -694,7 +694,6 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
                 detail=f"Only emails from {request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST} are allowed",
             )
 
-    user_count = Users.get_num_users()
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
@@ -704,7 +703,7 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
     try:
-        if user_count == 0:
+        if not has_users:
             role = "admin"
         elif request.app.state.config.ENABLE_SIGNUP_VERIFY:
             role = "pending"
@@ -771,7 +770,7 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
                 user.id, request.app.state.config.USER_PERMISSIONS
             )
 
-            if user_count == 0:
+            if not has_users:
                 # Disable signup after the first user is created
                 request.app.state.config.ENABLE_SIGNUP = False
 
@@ -817,7 +816,7 @@ async def signout(request: Request, response: Response):
 
     if ENABLE_OAUTH_SIGNUP.value:
         oauth_id_token = request.cookies.get("oauth_id_token")
-        if oauth_id_token:
+        if oauth_id_token and OPENID_PROVIDER_URL.value:
             try:
                 async with ClientSession(trust_env=True) as session:
                     async with session.get(OPENID_PROVIDER_URL.value) as resp:

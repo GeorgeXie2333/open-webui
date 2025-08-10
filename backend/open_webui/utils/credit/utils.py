@@ -27,7 +27,15 @@ from open_webui.models.models import Models, ModelModel
 def get_model_price(
     model: Optional[ModelModel] = None,
     is_embedding: Optional[bool] = False,
-) -> (Decimal, Decimal, Decimal, Decimal):
+) -> (Decimal, Decimal, Decimal, Decimal, Decimal):
+    """
+    Returns
+    - prompt price
+    - prompt cache price
+    - completion price
+    - request price
+    - minimum credit
+    """
     # embedding
     if is_embedding:
         return (
@@ -35,10 +43,12 @@ def get_model_price(
             Decimal(0),
             Decimal(0),
             Decimal(0),
+            Decimal(0),
         )
     # no model provide
     if not model or not isinstance(model, ModelModel):
         return (
+            Decimal(USAGE_CALCULATE_DEFAULT_TOKEN_PRICE.value),
             Decimal(USAGE_CALCULATE_DEFAULT_TOKEN_PRICE.value),
             Decimal(USAGE_CALCULATE_DEFAULT_TOKEN_PRICE.value),
             Decimal(USAGE_CALCULATE_DEFAULT_REQUEST_PRICE.value),
@@ -54,6 +64,11 @@ def get_model_price(
     return (
         Decimal(
             model_price.get("prompt_price", USAGE_CALCULATE_DEFAULT_TOKEN_PRICE.value)
+        ),
+        Decimal(
+            model_price.get(
+                "prompt_cache_price", USAGE_CALCULATE_DEFAULT_TOKEN_PRICE.value
+            )
         ),
         Decimal(
             model_price.get(

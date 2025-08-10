@@ -166,6 +166,7 @@ class CreditDeduct:
         )
         (
             self.prompt_unit_price,
+            self.prompt_cache_unit_price,
             self.completion_unit_price,
             self.request_unit_price,
             _,
@@ -194,6 +195,7 @@ class CreditDeduct:
                     usage={
                         "total_price": float(self.total_price),
                         "prompt_unit_price": float(self.prompt_unit_price),
+                        "prompt_cache_unit_price": float(self.prompt_cache_unit_price),
                         "completion_unit_price": float(self.completion_unit_price),
                         "request_unit_price": float(self.request_unit_price),
                         "feature_price": float(self.feature_price),
@@ -229,6 +231,28 @@ class CreditDeduct:
 
     @property
     def prompt_price(self) -> Decimal:
+        cache_tokens = 0
+        # load from prompt_tokens_details or input_tokens_details
+        if (
+            self.usage.prompt_tokens_details is not None
+            and self.usage.prompt_tokens_details.cached_tokens
+        ):
+            cache_tokens = self.usage.prompt_tokens_details.cached_tokens or 0
+        elif (
+            self.usage.input_tokens_details is not None
+            and self.usage.input_tokens_details.cached_tokens
+        ):
+            cache_tokens = self.usage.input_tokens_details.cached_tokens or 0
+        # check cache price
+        if cache_tokens > 0 and self.prompt_cache_unit_price > 0:
+            return (
+                (
+                    self.prompt_cache_unit_price * cache_tokens
+                    + self.prompt_unit_price * (self.usage.prompt_tokens - cache_tokens)
+                )
+                / 1000
+                / 1000
+            )
         return self.prompt_unit_price * self.usage.prompt_tokens / 1000 / 1000
 
     @property
