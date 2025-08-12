@@ -15,14 +15,21 @@
 
 	let loading = false;
 
-	let deleteTime = new Date();
-	deleteTime.setMonth(new Date().getMonth() - 1);
-	let input = deleteTime.toLocaleString();
+	const formatDatetimeLocal = (timestamp?: number): string => {
+		if (!timestamp) return '';
+		const date = new Date(timestamp * 1000);
+		return date.toISOString().slice(0, 16);
+	};
+
+	let input = '';
+	let _input = new Date();
+	_input.setMonth(_input.getMonth() - 1);
+	input = formatDatetimeLocal(Math.floor(_input.getTime() / 1000));
 
 	$: if (show) {
-		deleteTime = new Date();
-		deleteTime.setMonth(new Date().getMonth() - 6);
-		input = deleteTime.toLocaleString();
+		let _input = new Date();
+		_input.setMonth(_input.getMonth() - 1);
+		input = formatDatetimeLocal(Math.floor(_input.getTime() / 1000));
 	}
 
 	const submitHandler = async () => {
@@ -33,17 +40,15 @@
 
 		loading = true;
 
-		const _deleteTime = new Date(input);
-		if (isNaN(_deleteTime.getTime())) {
-			toast.error($i18n.t('Invalid date format'));
+		const inputTimestamp = input ? Math.floor(new Date(input).getTime() / 1000) : undefined;
+
+		if (!inputTimestamp) {
+			toast.error($i18n.t('Timestamp cannot be empty'));
 			loading = false;
 			return;
 		}
 
-		const res = await deleteCreditLogs(
-			localStorage.token,
-			Math.floor(deleteTime.getTime() / 1000)
-		).catch((error) => {
+		const res = await deleteCreditLogs(localStorage.token, inputTimestamp).catch((error) => {
 			toast.error(`${error}`);
 		});
 		if (res) {
@@ -80,9 +85,10 @@
 
 							<div class="flex-1">
 								<input
+									class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none border border-gray-200 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
 									bind:value={input}
-									type="text"
-									class="w-full rounded-md h-[32px] bg-gray-50 dark:text-gray-300 dark:bg-gray-850 text-center font-medium"
+									type="datetime-local"
+									required
 								/>
 							</div>
 						</div>

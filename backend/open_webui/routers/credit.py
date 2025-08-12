@@ -1,12 +1,14 @@
 import datetime
 import logging
+import time
 import uuid
 from collections import defaultdict
 from decimal import Decimal
 from typing import Optional
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import PlainTextResponse, RedirectResponse
+from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
 from open_webui.config import EZFP_CALLBACK_HOST
@@ -16,10 +18,12 @@ from open_webui.models.credits import (
     TradeTickets,
     CreditLogSimpleModel,
     CreditLogs,
+    RedemptionCodes,
+    RedemptionCodeModel,
 )
 from open_webui.models.models import Models, ModelPriceForm
 from open_webui.models.users import UserModel, Users
-from open_webui.utils.auth import get_current_user, get_admin_user
+from open_webui.utils.auth import get_verified_user, get_admin_user
 from open_webui.utils.credit.ezfp import ezfp_client
 from open_webui.utils.models import get_all_models
 
@@ -41,7 +45,7 @@ async def get_config(request: Request):
 
 @router.get("/logs", response_model=list[CreditLogSimpleModel])
 async def list_credit_logs(
-    page: Optional[int] = None, user: UserModel = Depends(get_current_user)
+    page: Optional[int] = None, user: UserModel = Depends(get_verified_user)
 ) -> TradeTicketModel:
     if page:
         limit = PAGE_ITEM_COUNT
@@ -100,7 +104,7 @@ async def get_all_logs(
 
 @router.post("/tickets", response_model=TradeTicketModel)
 async def create_ticket(
-    request: Request, form_data: dict, user: UserModel = Depends(get_current_user)
+    request: Request, form_data: dict, user: UserModel = Depends(get_verified_user)
 ) -> TradeTicketModel:
     out_trade_no = (
         f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.{uuid.uuid4().hex}"
@@ -260,3 +264,179 @@ async def get_statistics(
         "user_payment_stats_x": user_payment_stats_x,
         "user_payment_stats_y": user_payment_stats_y,
     }
+
+
+@router.get("/redemption_codes")
+async def get_redemption_codes(
+    keyword: Optional[str] = None,
+    page: Optional[int] = None,
+    limit: Optional[int] = None,
+    _: UserModel = Depends(get_admin_user),
+) -> dict:
+    """
+    Get all redemption codes.
+    """
+    # init params
+    page = page or 1
+    limit = limit or PAGE_ITEM_COUNT
+    offset = (page - 1) * limit
+    # query codes
+    try:
+        keyword = int(keyword)
+    except (ValueError, TypeError):
+        pass
+    total, codes = RedemptionCodes.get_codes(
+        keyword=keyword, offset=offset, limit=limit
+    )
+    if not codes:
+        return {"total": 0, "results": []}
+    # query users
+    users = Users.get_users_by_user_ids(user_ids={code.user_id for code in codes})
+    user_map = {user.id: user.name for user in users}
+    for code in codes:
+        setattr(code, "username", user_map.get(code.user_id, ""))
+    # response
+    return {"total": total, "results": codes}
+
+
+class CreateRedemptionCodeForm(BaseModel):
+    purpose: str = Field(min_length=1, max_length=255)
+    count: int = Field(ge=1, le=1000)
+    amount: float = Field(gt=0)
+    expired_at: Optional[int] = Field(default=None, gt=0)
+
+
+@router.post("/redemption_codes")
+async def create_redemption_code(
+    form_data: CreateRedemptionCodeForm, _: UserModel = Depends(get_admin_user)
+) -> dict:
+    """
+    Create redemption codes
+    """
+    now = int(time.time())
+    if form_data.expired_at is not None:
+        expired_at = datetime.datetime.fromtimestamp(form_data.expired_at)
+        if expired_at.timestamp() < now:
+            raise HTTPException(
+                status_code=400, detail="Expiration time must be in the future."
+            )
+    codes = [
+        RedemptionCodeModel(
+            code=f"{uuid.uuid4().hex}{uuid.uuid1().hex}",
+            purpose=form_data.purpose,
+            amount=Decimal(form_data.amount),
+            created_at=now,
+            expired_at=form_data.expired_at,
+        )
+        for _ in range(form_data.count)
+    ]
+    RedemptionCodes.insert_codes(codes)
+    return {"total": len(codes)}
+
+
+class UpdateRedemptionCodeForm(BaseModel):
+    purpose: Optional[str] = Field(None, min_length=1, max_length=255)
+    amount: Optional[float] = Field(None, gt=0)
+    expired_at: Optional[int] = Field(None, gt=0)
+
+
+@router.put("/redemption_codes/{code}")
+async def update_redemption_code(
+    code: str,
+    form_data: UpdateRedemptionCodeForm,
+    _: UserModel = Depends(get_admin_user),
+) -> None:
+    """
+    Update a redemption code
+    """
+    existing_code = RedemptionCodes.get_code(code)
+    if not existing_code:
+        raise HTTPException(status_code=404, detail="Redemption code not found.")
+
+    if existing_code.received_at is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot update a code that has already been received.",
+        )
+
+    if form_data.expired_at is not None:
+        expired_at = datetime.datetime.fromtimestamp(form_data.expired_at)
+        if expired_at.timestamp() < int(time.time()):
+            raise HTTPException(
+                status_code=400, detail="Expiration time must be in the future."
+            )
+
+    existing_code.purpose = form_data.purpose
+    existing_code.amount = Decimal(form_data.amount)
+    existing_code.expired_at = form_data.expired_at
+
+    return RedemptionCodes.update_code(existing_code)
+
+
+@router.delete("/redemption_codes/{code}")
+async def delete_redemption_codes(
+    code: str, _: UserModel = Depends(get_admin_user)
+) -> None:
+    """
+    Delete a redemption code
+    """
+    return RedemptionCodes.delete_code(code)
+
+
+@router.get("/redemption_codes/export")
+async def export_redemption_codes(
+    keyword: str, _: UserModel = Depends(get_admin_user)
+) -> Response:
+    """
+    Export all redemption codes as a plain text response.
+    """
+    _, codes = RedemptionCodes.get_codes(keyword=keyword)
+    # build CSV content
+    csv_content = "Code,Purpose,Amount,User ID,Created At,Expired At,Received At\n"
+    for code in codes:
+        csv_content += (
+            ",".join(
+                [
+                    code.code,
+                    f'"{code.purpose}"',
+                    str(code.amount),
+                    str(code.user_id) if code.user_id else "",
+                    datetime.datetime.fromtimestamp(code.created_at).strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+                    (
+                        datetime.datetime.fromtimestamp(code.expired_at).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if code.expired_at
+                        else ""
+                    ),
+                    (
+                        datetime.datetime.fromtimestamp(code.received_at).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                        if code.received_at
+                        else ""
+                    ),
+                ]
+            )
+            + "\n"
+        )
+    # set the response headers
+    headers = {
+        "Content-Disposition": f"attachment; filename={quote(keyword)}.csv",
+        "Content-Type": "text/csv",
+    }
+    # return the response
+    return Response(content=csv_content, headers=headers)
+
+
+@router.get("/redemption_codes/{code}/receive")
+async def receive_redemption_code(
+    code: str, user: UserModel = Depends(get_verified_user)
+) -> None:
+    """
+    Receive a redemption code.
+    """
+    RedemptionCodes.receive_code(code, user.id)
+    return None

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.22.1] - 2025.08.11
+
+### Added
+
+- 积分充值页面增加兑换码功能 (设置-积分)
+- 增加兑换码管理功能 (管理员面板-用户-兑换码)
+
+### Changed
+
+- 合并官方 0.6.22 改动
+
 ## [0.6.21.1] - 2025.08.10
 
 ### Changed

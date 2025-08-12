@@ -1303,6 +1303,7 @@ if audit_level != AuditLevel.NONE:
 
 
 @app.get("/api/models")
+@app.get("/api/v1/models")  # Experimental: Compatibility with OpenAI API
 async def get_models(
     request: Request, refresh: bool = False, user=Depends(get_verified_user)
 ):
@@ -1394,6 +1395,7 @@ async def get_base_models(request: Request, user=Depends(get_admin_user)):
 
 
 @app.post("/api/embeddings")
+@app.post("/api/v1/embeddings")  # Experimental: Compatibility with OpenAI API
 async def embeddings(
     request: Request, form_data: dict, user=Depends(get_verified_user)
 ):
@@ -1420,6 +1422,7 @@ async def embeddings(
 
 
 @app.post("/api/chat/completions")
+@app.post("/api/v1/chat/completions")  # Experimental: Compatibility with OpenAI API
 async def chat_completion(
     request: Request,
     form_data: dict,

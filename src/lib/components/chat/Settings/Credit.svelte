@@ -1,9 +1,17 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
 	import { user } from '$lib/stores';
-	import { createTradeTicket, getCreditConfig, listCreditLog } from '$lib/apis/credit';
+	import {
+		createTradeTicket,
+		getCreditConfig,
+		listCreditLog,
+		receiveRedemptionCode
+	} from '$lib/apis/credit';
 	import { toast } from 'svelte-sonner';
 	import { getSessionUser } from '$lib/apis/auths';
+	import Modal from '$lib/components/common/Modal.svelte';
+	import XMark from '$lib/components/icons/XMark.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -68,6 +76,11 @@
 		}
 	];
 	let amount = null;
+
+	// redemption code variables
+	let showRedemptionModal = false;
+	let redemptionCode = '';
+	let isSubmittingRedemption = false;
 
 	let config = {
 		CREDIT_EXCHANGE_RATIO: 0,
@@ -209,6 +222,39 @@
 	onMount(async () => {
 		await doInit();
 	});
+
+	const handleRedeemCode = async () => {
+		if (!redemptionCode || !redemptionCode.trim()) {
+			toast.error($i18n.t('Please enter a valid redemption code'));
+			return;
+		}
+
+		isSubmittingRedemption = true;
+
+		try {
+			await receiveRedemptionCode(localStorage.token, redemptionCode.trim());
+			toast.success($i18n.t('Redemption code applied successfully'));
+			redemptionCode = '';
+			showRedemptionModal = false;
+
+			// refresh user data and logs
+			await doInit();
+		} catch (error) {
+			toast.error(`${error}`);
+		} finally {
+			isSubmittingRedemption = false;
+		}
+	};
+
+	const handleOpenRedemptionModal = () => {
+		redemptionCode = '';
+		showRedemptionModal = true;
+	};
+
+	const handleCloseRedemptionModal = () => {
+		redemptionCode = '';
+		showRedemptionModal = false;
+	};
 </script>
 
 <div class="flex flex-col h-full justify-between text-sm">
@@ -216,7 +262,15 @@
 		<div class="space-y-1">
 			<div class="pt-0.5">
 				<div class="flex flex-col w-full">
-					<div class="mb-1 text-base font-medium">{$i18n.t('Credit')}</div>
+					<div class="mb-1 text-base font-medium flex items-center justify-between">
+						<span>{$i18n.t('Credit')}</span>
+						<button
+							on:click={handleOpenRedemptionModal}
+							class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+						>
+							{$i18n.t('Redeem Code')}
+						</button>
+					</div>
 					<div class="flex items-center">
 						<div>{credit}</div>
 						<button class="ml-1" on:click={() => doInit()}>
@@ -325,7 +379,11 @@
 						<div
 							class="overflow-y-scroll max-h-[14rem] flex flex-col scrollbar-hidden relative whitespace-nowrap overflow-x-auto max-w-full rounded-sm"
 						>
-							{#if logs.length > 0}
+							{#if logs.length === 0 && hasMore}
+								<div class="my-10">
+									<Spinner className="size-5" />
+								</div>
+							{:else if logs.length > 0}
 								<table
 									class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-fixed max-w-full rounded-sm}"
 								>
@@ -404,4 +462,57 @@
 			{/if}
 		</div>
 	</div>
+
+	<Modal size="sm" bind:show={showRedemptionModal}>
+		<div>
+			<div class=" flex justify-between dark:text-gray-300 px-5 pt-4">
+				<div class=" text-lg font-medium self-center">{$i18n.t('Redeem Credit Code')}</div>
+				<button
+					class="self-center"
+					on:click={() => {
+						showRedemptionModal = false;
+					}}
+				>
+					<XMark className={'size-5'} />
+				</button>
+			</div>
+
+			<div class="flex flex-col md:flex-row w-full px-4 pb-3 md:space-x-4 dark:text-gray-200">
+				<div class="flex flex-col w-full sm:flex-row sm:justify-center sm:space-x-6">
+					<form class="flex flex-col w-full" on:submit|preventDefault={() => handleRedeemCode()}>
+						<div class="px-1">
+							<div class="flex flex-col w-full mb-3 mt-3">
+								<div class="flex-1">
+									<input
+										class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none border border-gray-200 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+										bind:value={redemptionCode}
+										placeholder={$i18n.t('Enter your redemption code')}
+										type="text"
+										required
+									/>
+								</div>
+							</div>
+						</div>
+						<div class="flex justify-end text-sm font-medium">
+							<button
+								class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full flex flex-row space-x-1 items-center {isSubmittingRedemption
+									? ' cursor-not-allowed'
+									: ''}"
+								type="submit"
+								disabled={isSubmittingRedemption}
+							>
+								{$i18n.t('Redeem')}
+
+								{#if isSubmittingRedemption}
+									<div class="ml-2 self-center">
+										<Spinner />
+									</div>
+								{/if}
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</Modal>
 </div>

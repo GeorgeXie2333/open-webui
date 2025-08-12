@@ -5,12 +5,13 @@
 	import { toast } from 'svelte-sonner';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import DeleteCreditLogModal from '$lib/components/admin/Users/DeleteCreditLogModal.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
 
 	const i18n = getContext('i18n');
 
 	let page = 1;
 	let limit = 30;
-	let total = 0;
+	let total = null;
 
 	$: if (page) {
 		doQuery();
@@ -129,63 +130,70 @@
 		</div>
 	</div>
 </div>
-<div class="mt-2 scrollbar-hidden relative whitespace-nowrap overflow-x-auto max-w-full rounded-sm">
-	<table
-		class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-auto max-w-full rounded-sm}"
+{#if total === null}
+	<div class="my-10">
+		<Spinner className="size-5" />
+	</div>
+{:else}
+	<div
+		class="mt-2 scrollbar-hidden relative whitespace-nowrap overflow-x-auto max-w-full rounded-sm"
 	>
-		<thead
-			class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400 -translate-y-0.5"
+		<table
+			class="w-full text-sm text-left text-gray-500 dark:text-gray-400 table-auto max-w-full rounded-sm}"
 		>
-			<tr>
-				<th scope="col" class="px-3 py-1.5 select-none w-3">
-					{$i18n.t('Date')}
-				</th>
-				<th scope="col" class="px-3 py-1.5 select-none w-3">
-					{$i18n.t('User')}
-				</th>
-				<th scope="col" class="px-3 py-1.5 select-none w-3">
-					{$i18n.t('Credit')}
-				</th>
-				<th scope="col" class="px-3 py-1.5 select-none w-3">
-					{$i18n.t('Model')}
-				</th>
-				<th scope="col" class="px-3 py-1.5 select-none w-3">
-					{$i18n.t('Desc')}
-				</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each logs as log}
-				<tr class="bg-white dark:bg-gray-900 dark:border-gray-850 text-xs group">
-					<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
-						<div class=" line-clamp-1">
-							{formatDate(log.created_at)}
-						</div>
-					</td>
-					<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
-						<div class=" line-clamp-1">
-							{log.username || log.user_id}
-						</div>
-					</td>
-					<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
-						<div class=" line-clamp-1">
-							{parseFloat(log.credit).toFixed(6)}
-						</div>
-					</td>
-					<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
-						<div class=" line-clamp-1">
-							{log.detail?.api_params?.model?.name || log.detail?.api_params?.model?.id || '- -'}
-						</div>
-					</td>
-					<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
-						<div class=" line-clamp-1">
-							{formatDesc(log)}
-						</div>
-					</td>
+			<thead
+				class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-850 dark:text-gray-400 -translate-y-0.5"
+			>
+				<tr>
+					<th scope="col" class="px-3 py-1.5 select-none w-3">
+						{$i18n.t('Date')}
+					</th>
+					<th scope="col" class="px-3 py-1.5 select-none w-3">
+						{$i18n.t('User')}
+					</th>
+					<th scope="col" class="px-3 py-1.5 select-none w-3">
+						{$i18n.t('Credit')}
+					</th>
+					<th scope="col" class="px-3 py-1.5 select-none w-3">
+						{$i18n.t('Model')}
+					</th>
+					<th scope="col" class="px-3 py-1.5 select-none w-3">
+						{$i18n.t('Desc')}
+					</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
-</div>
-
-<Pagination bind:page count={total} perPage={limit} />
+			</thead>
+			<tbody>
+				{#each logs as log}
+					<tr class="bg-white dark:bg-gray-900 dark:border-gray-850 text-xs group">
+						<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
+							<div class=" line-clamp-1">
+								{formatDate(log.created_at)}
+							</div>
+						</td>
+						<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
+							<div class=" line-clamp-1">
+								{log.username || log.user_id}
+							</div>
+						</td>
+						<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
+							<div class=" line-clamp-1">
+								{parseFloat(log.credit).toFixed(6)}
+							</div>
+						</td>
+						<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
+							<div class=" line-clamp-1">
+								{log.detail?.api_params?.model?.name || log.detail?.api_params?.model?.id || '- -'}
+							</div>
+						</td>
+						<td class="px-3 py-1.5 text-left font-medium text-gray-900 dark:text-white w-fit">
+							<div class=" line-clamp-1">
+								{formatDesc(log)}
+							</div>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+	<Pagination bind:page count={total} perPage={limit} />
+{/if}
