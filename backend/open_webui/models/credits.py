@@ -474,7 +474,7 @@ class RedemptionCodeTable:
                 redis_cluster=REDIS_CLUSTER,
             )
             if not redis.set(cache_key, cache_key, nx=True, ex=60):
-                raise HTTPException(status_code=400, detail="Code already received")
+                raise HTTPException(status_code=400, detail="Too many requests")
             # receive
             with get_db() as db:
                 db.query(RedemptionCode).filter(RedemptionCode.code == code).update(

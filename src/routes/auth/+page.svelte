@@ -557,3 +557,18 @@
         background-color: white !important;
     }
 </style>
+
+<style>
+    .auth-page {
+        background-color: white !important;
+        background-image: url('/static/banner.jpg');
+        background-repeat: no-repeat;
+        background-position: top center;
+        background-size: 100% auto;
+        background-attachment: fixed;
+    }
+    /* 确保暗色主题下背景也是白色 */
+    :global(.dark) .auth-page {
+        background-color: white !important;
+    }
+</style>

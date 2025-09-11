@@ -11,6 +11,7 @@
 	import CreateRedemptionCodeModal from './CreateRedemptionCodeModal.svelte';
 	import EditRedemptionCodeModal from './EditRedemptionCodeModal.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
+	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -45,11 +46,9 @@
 		}
 	};
 
+	let showDeleteConfirmDialog = false;
+	let deleteCreditLogID = '';
 	const handleDelete = async (code: string) => {
-		if (!confirm($i18n.t('Are you sure you want to delete this redemption code?'))) {
-			return;
-		}
-
 		try {
 			await deleteRedemptionCode(localStorage.token, code);
 			toast.success($i18n.t('Redemption code deleted successfully'));
@@ -138,6 +137,13 @@
 	}}
 />
 
+<ConfirmDialog
+	bind:show={showDeleteConfirmDialog}
+	on:confirm={() => {
+		handleDelete(deleteCreditLogID);
+	}}
+/>
+
 <div class="mt-0.5 mb-2 gap-1 flex flex-col md:flex-row justify-between">
 	<div class="flex md:self-center text-lg font-medium px-0.5">
 		<div class="flex-shrink-0">
@@ -146,51 +152,7 @@
 	</div>
 
 	<div class="flex gap-1">
-		<div class="flex w-full space-x-2">
-			<div>
-				<Tooltip content={$i18n.t('Create Redemption Code')}>
-					<button
-						class="p-2 rounded-xl hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-850 transition font-medium text-sm flex items-center space-x-1"
-						on:click={() => {
-							showCreateModal = true;
-						}}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							stroke-width="1.5"
-							stroke="currentColor"
-							class="w-4 h-4"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-						</svg>
-					</button>
-				</Tooltip>
-			</div>
-
-			<div>
-				<Tooltip content={$i18n.t('Export Redemption Codes')}>
-					<button
-						class="p-2 rounded-xl hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-850 transition font-medium text-sm flex items-center space-x-1"
-						on:click={handleExport}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 24 24"
-							stroke-width="1.5"
-							stroke="currentColor"
-							class="w-4 h-4"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
-							/>
-						</svg>
-					</button>
-				</Tooltip>
-			</div>
-
+		<div class="flex w-full">
 			<div class="flex flex-1 w-full">
 				<div class="self-center ml-1 mr-3">
 					<svg
@@ -211,6 +173,51 @@
 					bind:value={keyword}
 					placeholder={$i18n.t('Search by code or topic')}
 				/>
+			</div>
+
+			<div>
+				<Tooltip content={$i18n.t('Create Redemption Code')}>
+					<button
+						class="p-2 rounded-xl hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-850 transition font-medium text-sm flex items-center space-x-1"
+						on:click={() => {
+							showCreateModal = true;
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2"
+							stroke="currentColor"
+							class="size-3.5"
+							aria-hidden="true"
+							><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"
+							></path></svg
+						>
+					</button>
+				</Tooltip>
+			</div>
+
+			<div>
+				<Tooltip content={$i18n.t('Export Redemption Codes')}>
+					<button
+						class="p-2 rounded-xl hover:bg-gray-100 dark:bg-gray-900 dark:hover:bg-gray-850 transition font-medium text-sm flex items-center space-x-1"
+						on:click={handleExport}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 16 16"
+							fill="currentColor"
+							class="w-4 h-4"
+							><path d="M2 3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Z"
+							></path><path
+								fill-rule="evenodd"
+								d="M13 6H3v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V6ZM8.75 7.75a.75.75 0 0 0-1.5 0v2.69L6.03 9.22a.75.75 0 0 0-1.06 1.06l2.5 2.5a.75.75 0 0 0 1.06 0l2.5-2.5a.75.75 0 1 0-1.06-1.06l-1.22 1.22V7.75Z"
+								clip-rule="evenodd"
+							></path></svg
+						>
+					</button>
+				</Tooltip>
 			</div>
 		</div>
 	</div>
@@ -304,15 +311,16 @@
 									>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
 											viewBox="0 0 24 24"
 											stroke-width="1.5"
 											stroke="currentColor"
-											class="w-3 h-3"
+											class="w-4 h-4"
 										>
 											<path
 												stroke-linecap="round"
 												stroke-linejoin="round"
-												d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+												d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
 											/>
 										</svg>
 									</button>
@@ -321,14 +329,18 @@
 								<Tooltip content={$i18n.t('Delete')}>
 									<button
 										class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-red-500"
-										on:click={() => handleDelete(code.code)}
+										on:click={() => {
+											deleteCreditLogID = code.code;
+											showDeleteConfirmDialog = true;
+										}}
 									>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
 											viewBox="0 0 24 24"
 											stroke-width="1.5"
 											stroke="currentColor"
-											class="w-3 h-3"
+											class="w-4 h-4"
 										>
 											<path
 												stroke-linecap="round"

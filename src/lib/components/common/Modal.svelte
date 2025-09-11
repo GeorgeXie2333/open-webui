@@ -39,6 +39,26 @@
 		}
 	};
 
+	const handleBackdropClick = (event: MouseEvent) => {
+		// check if user is selecting text
+		const selection = window.getSelection();
+		if (selection && selection.toString().length > 0) {
+			return;
+		}
+
+		// check if the click target contains selectable text elements
+		const target = event.target as Element;
+		if (
+			target &&
+			target.closest &&
+			target.closest('.select-text, input, textarea, [contenteditable]')
+		) {
+			return;
+		}
+
+		show = false;
+	};
+
 	const handleKeyDown = (event: KeyboardEvent) => {
 		if (event.key === 'Escape' && isTopModal()) {
 			console.log('Escape');
@@ -89,9 +109,7 @@
 		role="dialog"
 		class="modal fixed top-0 right-0 left-0 bottom-0 bg-black/60 w-full h-screen max-h-[100dvh] {containerClassName} flex justify-center z-9999 overflow-y-auto overscroll-contain"
 		in:fade={{ duration: 10 }}
-		on:mousedown={() => {
-			show = false;
-		}}
+		on:mousedown={handleBackdropClick}
 	>
 		<div
 			class="m-auto max-w-full {sizeToWidth(size)} {size !== 'full'

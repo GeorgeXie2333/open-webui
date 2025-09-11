@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.28.1] - 2025.09.11
+
+### Changed
+
+- 合并官方 0.6.28 改动
+
+## [0.6.27.1] - 2025.09.10
+
+### Changed
+
+- 合并官方 0.6.27 改动
+
+## [0.6.26.1] - 2025.08.28
+
+### Changed
+
+- 合并官方 0.6.26 改动
+
+## [0.6.25.1] - 2025.08.22
+
+### Changed
+
+- 合并官方 0.6.25 改动
+
+## [0.6.24.1] - 2025.08.22
+
+### Changed
+
+- 合并官方 0.6.24 改动
+
+## [0.6.23.1] - 2025.08.22
+
+### Changed
+
+- 积分日志与兑换码的样式调整为 OpenWebUI 的统一样式
+- 支持禁用自定义编辑器和代码块
+- 优化 DB 初始化流程
+- 移除不必要的对话日志加载逻辑
+- 合并官方 0.6.23 改动
+
+### Fixed
+
+- 修复自定义用户待激活界面提示不生效的问题
+- 修复弹窗内容无法复制的问题
+
 ## [0.6.22.1] - 2025.08.11
 
 ### Added

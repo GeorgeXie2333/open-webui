@@ -38,7 +38,7 @@ export default defineConfig({
 		format: 'es'
 	},
 	esbuild: {
-		pure: process.env.ENV === 'dev' ? [] : ['console.log', 'console.debug'],
+		pure: process.env.ENV === 'dev' ? [] : ['console.log', 'console.debug', 'console.error'],
 		treeShaking: true
 	}
 });

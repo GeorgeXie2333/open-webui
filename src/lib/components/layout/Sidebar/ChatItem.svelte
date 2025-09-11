@@ -15,7 +15,8 @@
 		getChatList,
 		getChatListByTagName,
 		getPinnedChatList,
-		updateChatById
+		updateChatById,
+		updateChatFolderIdById
 	} from '$lib/apis/chats';
 	import {
 		chatId,
@@ -54,9 +55,26 @@
 
 	let mouseOver = false;
 	let draggable = false;
+	let hoverTimer = null;
 	$: if (mouseOver) {
-		loadChat();
+		startHoverTimer();
+	} else {
+		clearHoverTimer();
 	}
+
+	const startHoverTimer = () => {
+		clearHoverTimer();
+		hoverTimer = setTimeout(() => {
+			loadChat();
+		}, 800);
+	};
+
+	const clearHoverTimer = () => {
+		if (hoverTimer) {
+			clearTimeout(hoverTimer);
+			hoverTimer = null;
+		}
+	};
 
 	const loadChat = async () => {
 		if (!chat) {
@@ -86,7 +104,6 @@
 			currentChatPage.set(1);
 			await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			await pinnedChats.set(await getPinnedChatList(localStorage.token));
-
 			dispatch('change');
 		}
 	};
@@ -134,6 +151,29 @@
 	const archiveChatHandler = async (id) => {
 		await archiveChatById(localStorage.token, id);
 		dispatch('change');
+	};
+
+	const moveChatHandler = async (chatId, folderId) => {
+		if (chatId && folderId) {
+			const res = await updateChatFolderIdById(localStorage.token, chatId, folderId).catch(
+				(error) => {
+					toast.error(`${error}`);
+					return null;
+				}
+			);
+
+			if (res) {
+				currentChatPage.set(1);
+				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				await pinnedChats.set(await getPinnedChatList(localStorage.token));
+
+				dispatch('change');
+
+				toast.success($i18n.t('Chat moved successfully'));
+			}
+		} else {
+			toast.error($i18n.t('Failed to move chat'));
+		}
 	};
 
 	let itemElement;
@@ -366,50 +406,52 @@
 			/>
 		</div>
 	{:else}
-		<a
-			class=" w-full flex justify-between rounded-lg px-[11px] py-[6px] {id === $chatId ||
-			confirmEdit
-				? 'bg-gray-100 dark:bg-gray-900'
-				: selected
-					? 'bg-gray-100 dark:bg-gray-950'
-					: ' group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
-			href="/c/{id}"
-			on:click={() => {
-				dispatch('select');
+		<Tooltip content={title}>
+			<a
+				class=" w-full flex justify-between rounded-lg px-[11px] py-[6px] {id === $chatId ||
+				confirmEdit
+					? 'bg-gray-100 dark:bg-gray-900'
+					: selected
+						? 'bg-gray-100 dark:bg-gray-950'
+						: ' group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
+				href="/c/{id}"
+				on:click={() => {
+					dispatch('select');
 
-				if (
-					$selectedFolder &&
-					!($selectedFolder?.items?.chats.map((chat) => chat.id) ?? []).includes(id)
-				) {
-					selectedFolder.set(null); // Reset selected folder if the chat is not in it
-				}
+					if (
+						$selectedFolder &&
+						!($selectedFolder?.items?.chats.map((chat) => chat.id) ?? []).includes(id)
+					) {
+						selectedFolder.set(null); // Reset selected folder if the chat is not in it
+					}
 
-				if ($mobile) {
-					showSidebar.set(false);
-				}
-			}}
-			on:dblclick={async (e) => {
-				e.preventDefault();
-				e.stopPropagation();
+					if ($mobile) {
+						showSidebar.set(false);
+					}
+				}}
+				on:dblclick={async (e) => {
+					e.preventDefault();
+					e.stopPropagation();
 
-				doubleClicked = true;
-				renameHandler();
-			}}
-			on:mouseenter={(e) => {
-				mouseOver = true;
-			}}
-			on:mouseleave={(e) => {
-				mouseOver = false;
-			}}
-			on:focus={(e) => {}}
-			draggable="false"
-		>
-			<div class=" flex self-center flex-1 w-full">
-				<div dir="auto" class="text-left self-center overflow-hidden w-full h-[20px]">
-					{title}
+					doubleClicked = true;
+					renameHandler();
+				}}
+				on:mouseenter={(e) => {
+					mouseOver = true;
+				}}
+				on:mouseleave={(e) => {
+					mouseOver = false;
+				}}
+				on:focus={(e) => {}}
+				draggable="false"
+			>
+				<div class=" flex self-center flex-1 w-full">
+					<div dir="auto" class="text-left self-center overflow-hidden w-full h-[20px]">
+						{title}
+					</div>
 				</div>
-			</div>
-		</a>
+			</a>
+		</Tooltip>
 	{/if}
 
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -485,6 +527,7 @@
 					shareHandler={() => {
 						showShareChatModal = true;
 					}}
+					{moveChatHandler}
 					archiveChatHandler={() => {
 						archiveChatHandler(id);
 					}}
