@@ -28,7 +28,7 @@
     const setSessionUser = async (sessionUser, redirectPath: string | null = null) => {
         if (sessionUser) {
             console.log(sessionUser);
-            toast.success($i18n.t`You're now logged in.`));
+            toast.success($i18n.t(`You're now logged in.`));
             if (sessionUser.token) {
                 localStorage.token = sessionUser.token;
             }
@@ -44,7 +44,7 @@
     };
     const signInHandler = async () => {
         const sessionUser = await userSignIn(email, password).catch((error) => {
-            toast.error`${error}`);
+            toast.error(`${error}`);
             return null;
         });
         await setSessionUser(sessionUser);
@@ -62,7 +62,7 @@
         }
         const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name), recaptchaToken).catch(
             (error) => {
-                toast.error`${error}`);
+                toast.error(`${error}`);
                 if (recaptchaComponent) {
                     recaptchaComponent.reset();
                     recaptchaToken = '';
@@ -74,7 +74,7 @@
     };
     const ldapSignInHandler = async () => {
         const sessionUser = await ldapUserSignIn(ldapUsername, password).catch((error) => {
-            toast.error`${error}`);
+            toast.error(`${error}`);
             return null;
         });
         await setSessionUser(sessionUser);
@@ -101,7 +101,7 @@
             return;
         }
         const sessionUser = await getSessionUser(token).catch((error) => {
-            toast.error`${error}`);
+            toast.error(`${error}`);
             return null;
         });
         if (!sessionUser) {
@@ -225,13 +225,13 @@
                                 <div class="mb-1">
                                     <div class=" text-2xl font-medium">
                                         {#if $config?.onboarding ?? false}
-                                            {$i18n.t`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t(`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else if mode === 'ldap'}
-                                            {$i18n.t`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else if mode === 'signin'}
-                                            {$i18n.t`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else}
-                                            {$i18n.t`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {/if}
                                     </div>
                                     {#if $config?.onboarding ?? false}
