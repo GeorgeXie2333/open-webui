@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import DOMPurify from 'dompurify';
     import { marked } from 'marked';
     import { toast } from 'svelte-sonner';
@@ -14,11 +14,10 @@
     import OnBoarding from '$lib/components/OnBoarding.svelte';
     import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
     import ReCaptcha from '$lib/components/auth/ReCaptcha.svelte';
-
     const i18n = getContext('i18n');
-
     let loaded = false;
     let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
+    let form = null;
     let name = '';
     let email = '';
     let password = '';
@@ -26,50 +25,44 @@
     let recaptchaToken = '';
     let ldapUsername = '';
     let recaptchaComponent;
-
-    const querystringValue = (key) => {
-        const querystring = window.location.search;
-        const urlParams = new URLSearchParams(querystring);
-        return urlParams.get(key);
-    };
-
-    const setSessionUser = async (sessionUser) => {
+    const setSessionUser = async (sessionUser, redirectPath: string | null = null) => {
         if (sessionUser) {
             console.log(sessionUser);
-            toast.success($i18n.t(`You're now logged in.`));
+            toast.success($i18n.t`You're now logged in.`));
             if (sessionUser.token) {
                 localStorage.token = sessionUser.token;
             }
             $socket.emit('user-join', { auth: { token: sessionUser.token } });
             await user.set(sessionUser);
             await config.set(await getBackendConfig());
-            const redirectPath = querystringValue('redirect') || '/';
+            if (!redirectPath) {
+                redirectPath = $page.url.searchParams.get('redirectPath') || '/';
+            }
             goto(redirectPath);
+            localStorage.removeItem('redirectPath');
         }
     };
-
     const signInHandler = async () => {
         const sessionUser = await userSignIn(email, password).catch((error) => {
-            toast.error(`${error}`);
+            toast.error`${error}`);
             return null;
         });
         await setSessionUser(sessionUser);
     };
-
     const signUpHandler = async () => {
+        if ($config?.ENABLE_RECAPTCHA && mode === 'signup' && !recaptchaToken) {
+            toast.error('请完成reCAPTCHA验证');
+            return;
+        }
         if ($config?.features?.enable_signup_password_confirmation) {
             if (password !== confirmPassword) {
                 toast.error($i18n.t('Passwords do not match.'));
                 return;
             }
         }
-        if ($config?.ENABLE_RECAPTCHA && mode === 'signup' && !recaptchaToken) {
-            toast.error('请完成reCAPTCHA验证');
-            return;
-        }
         const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name), recaptchaToken).catch(
             (error) => {
-                toast.error(`${error}`);
+                toast.error`${error}`);
                 if (recaptchaComponent) {
                     recaptchaComponent.reset();
                     recaptchaToken = '';
@@ -79,15 +72,13 @@
         );
         await setSessionUser(sessionUser);
     };
-
     const ldapSignInHandler = async () => {
         const sessionUser = await ldapUserSignIn(ldapUsername, password).catch((error) => {
-            toast.error(`${error}`);
+            toast.error`${error}`);
             return null;
         });
         await setSessionUser(sessionUser);
     };
-
     const submitHandler = async () => {
         if (mode === 'ldap') {
             await ldapSignInHandler();
@@ -97,8 +88,8 @@
             await signUpHandler();
         }
     };
-
-    const checkOauthCallback = async () => {
+    const oauthCallbackHandler = async () => {
+        // Get the value of the 'token' cookie
         function getCookie(name) {
             const match = document.cookie.match(
                 new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)')
@@ -110,18 +101,27 @@
             return;
         }
         const sessionUser = await getSessionUser(token).catch((error) => {
-            toast.error(`${error}`);
+            toast.error`${error}`);
             return null;
         });
         if (!sessionUser) {
             return;
         }
         localStorage.token = token;
-        await setSessionUser(sessionUser);
+        await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
     };
-
+    const handleRecaptchaVerified = (event) => {
+        recaptchaToken = event.detail.token;
+    };
+    const handleRecaptchaExpired = () => {
+        recaptchaToken = '';
+        toast.warning('reCAPTCHA已过期，请重新验证');
+    };
+    const handleRecaptchaError = () => {
+        recaptchaToken = '';
+        toast.error('reCAPTCHA验证出错，请刷新页面重试');
+    };
     let onboarding = false;
-
     async function setLogoImage() {
         await tick();
         const logo = document.getElementById('logo');
@@ -132,35 +132,29 @@
                 darkImage.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
                 darkImage.onload = () => {
                     logo.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
-                    logo.style.filter = '';
+                    logo.style.filter = ''; // Ensure no inversion is applied if favicon-dark.png exists
                 };
                 darkImage.onerror = () => {
-                    logo.style.filter = 'invert(1)';
+                    logo.style.filter = 'invert(1)'; // Invert image if favicon-dark.png is missing
                 };
             }
         }
     }
-
-    const handleRecaptchaVerified = (event) => {
-        recaptchaToken = event.detail.token;
-    };
-
-    const handleRecaptchaExpired = () => {
-        recaptchaToken = '';
-        toast.warning('reCAPTCHA已过期，请重新验证');
-    };
-
-    const handleRecaptchaError = () => {
-        recaptchaToken = '';
-        toast.error('reCAPTCHA验证出错，请刷新页面重试');
-    };
-
     onMount(async () => {
+        const redirectPath = $page.url.searchParams.get('redirect');
         if ($user !== undefined) {
-            const redirectPath = querystringValue('redirect') || '/';
-            goto(redirectPath);
+            goto(redirectPath || '/');
+        } else {
+            if (redirectPath) {
+                localStorage.setItem('redirectPath', redirectPath);
+            }
         }
-        await checkOauthCallback();
+        const error = $page.url.searchParams.get('error');
+        if (error) {
+            toast.error(error);
+        }
+        await oauthCallbackHandler();
+        form = $page.url.searchParams.get('form');
         loaded = true;
         setLogoImage();
         if (($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false) {
@@ -231,13 +225,13 @@
                                 <div class="mb-1">
                                     <div class=" text-2xl font-medium">
                                         {#if $config?.onboarding ?? false}
-                                            {$i18n.t(`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else if mode === 'ldap'}
-                                            {$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else if mode === 'signin'}
-                                            {$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else}
-                                            {$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
                                         {/if}
                                     </div>
                                     {#if $config?.onboarding ?? false}
@@ -249,7 +243,7 @@
                                         </div>
                                     {/if}
                                 </div>
-                                {#if $config?.features.enable_login_form || $config?.features.enable_ldap}
+                                {#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
                                     <div class="flex flex-col mt-4">
                                         {#if mode === 'signup'}
                                             <div class="mb-2">
@@ -314,17 +308,6 @@
                                                 name="password"
                                                 required
                                             />
-                                            {#if mode === 'signin'}
-                                                <div class="mt-1 text-right">
-                                                    <button
-                                                        type="button"
-                                                        class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline"
-                                                        on:click={() => goto('/auth/forgot-password')}
-                                                    >
-                                                        忘记密码？
-                                                    </button>
-                                                </div>
-                                            {/if}
                                         </div>
                                         {#if mode === 'signup' && $config?.features?.enable_signup_password_confirmation}
                                             <div class="mt-2">
@@ -337,7 +320,7 @@
                                                     bind:value={confirmPassword}
                                                     type="password"
                                                     id="confirm-password"
-                                                    class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+                                                    class="my-0.5 w-full text-sm outline-hidden bg-transparent"
                                                     placeholder={$i18n.t('Confirm Your Password')}
                                                     autocomplete="new-password"
                                                     name="confirm-password"
@@ -358,7 +341,7 @@
                                     </div>
                                 {/if}
                                 <div class="mt-5">
-                                    {#if $config?.features.enable_login_form || $config?.features.enable_ldap}
+                                    {#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
                                         {#if mode === 'ldap'}
                                             <button
                                                 class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
@@ -404,7 +387,7 @@
                             {#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
                                 <div class="inline-flex items-center justify-center w-full">
                                     <hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
-                                    {#if $config?.features.enable_login_form || $config?.features.enable_ldap}
+                                    {#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
                                         <span
                                             class="px-3 text-sm font-medium text-gray-900 dark:text-white bg-transparent"
                                             >{$i18n.t('or')}</span
@@ -420,7 +403,11 @@
                                                 window.location.href = `${WEBUI_BASE_URL}/oauth/google/login`;
                                             }}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="size-6 mr-3">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 48 48"
+                                                class="size-6 mr-3"
+                                            >
                                                 <path
                                                     fill="#EA4335"
                                                     d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -445,7 +432,11 @@
                                                 window.location.href = `${WEBUI_BASE_URL}/oauth/microsoft/login`;
                                             }}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" class="size-6 mr-3">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 21 21"
+                                                class="size-6 mr-3"
+                                            >
                                                 <rect x="1" y="1" width="9" height="9" fill="#f25022" /><rect
                                                     x="1"
                                                     y="11"
@@ -470,7 +461,11 @@
                                                 window.location.href = `${WEBUI_BASE_URL}/oauth/github/login`;
                                             }}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="size-6 mr-3">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                viewBox="0 0 24 24"
+                                                class="size-6 mr-3"
+                                            >
                                                 <path
                                                     fill="currentColor"
                                                     d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.92 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57C20.565 21.795 24 17.31 24 12c0-6.63-5.37-12-12-12z"
@@ -542,21 +537,6 @@
         {/if}
     {/if}
 </div>
-
-<style>
-    .auth-page {
-        background-color: white !important;
-        background-image: url('/static/banner.jpg');
-        background-repeat: no-repeat;
-        background-position: top center;
-        background-size: 100% auto;
-        background-attachment: fixed;
-    }
-    /* 确保暗色主题下背景也是白色 */
-    :global(.dark) .auth-page {
-        background-color: white !important;
-    }
-</style>
 
 <style>
     .auth-page {
