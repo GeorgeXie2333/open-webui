@@ -308,6 +308,17 @@
                                                 name="password"
                                                 required
                                             />
+                                            {#if mode === 'signin'}
+                                                <div class="mt-1 text-right">
+                                                    <button
+                                                        type="button"
+                                                        class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline"
+                                                        on:click={() => goto('/auth/forgot-password')}
+                                                    >
+                                                        忘记密码？
+                                                    </button>
+                                                </div>
+                                            {/if}
                                         </div>
                                         {#if mode === 'signup' && $config?.features?.enable_signup_password_confirmation}
                                             <div class="mt-2">
