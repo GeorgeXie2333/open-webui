@@ -26,14 +26,15 @@
     let password = '';
     let confirmPassword = '';
     let ldapUsername = '';
-    let recaptchaToken = '';
 
+    // reCAPTCHA
+    let recaptchaToken = '';
     let recaptchaComponent: any;
 
     const setSessionUser = async (sessionUser: any, redirectPath: string | null = null) => {
         if (sessionUser) {
             console.log(sessionUser);
-            toast.success($i18n.t`You're now logged in.`);
+            toast.success($i18n.t("You're now logged in."));
             if (sessionUser.token) {
                 localStorage.token = sessionUser.token;
             }
@@ -42,10 +43,8 @@
             await config.set(await getBackendConfig());
 
             if (!redirectPath) {
-                // 统一使用最新版本的 redirect 参数名
                 redirectPath = $page.url.searchParams.get('redirect') || '/';
             }
-
             goto(redirectPath);
             localStorage.removeItem('redirectPath');
         }
@@ -60,7 +59,6 @@
     };
 
     const signUpHandler = async () => {
-        // reCAPTCHA 校验（仅 signup 时）
         if ($config?.ENABLE_RECAPTCHA && mode === 'signup' && !recaptchaToken) {
             toast.error('请完成reCAPTCHA验证');
             return;
@@ -78,7 +76,7 @@
             email,
             password,
             generateInitialsImage(name),
-            recaptchaToken // 将 token 传入后端
+            recaptchaToken
         ).catch((error) => {
             toast.error(`${error}`);
             if (recaptchaComponent) {
@@ -87,7 +85,6 @@
             }
             return null;
         });
-
         await setSessionUser(sessionUser);
     };
 
@@ -110,10 +107,16 @@
     };
 
     const oauthCallbackHandler = async () => {
+        // 使用更安全易读的 cookie 读取函数，避免正则转义问题
         function getCookie(name: string) {
-            const pattern = new RegExp(`(?:^|; )${name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1')}=([^;]*)`);
-            const match = document.cookie.match(pattern);
-            return match ? decodeURIComponent(match[1]) : null;
+            const cookies = document.cookie ? document.cookie.split('; ') : [];
+            for (const c of cookies) {
+                const [k, ...v] = c.split('=');
+                if (k === name) {
+                    return decodeURIComponent(v.join('='));
+                }
+            }
+            return null;
         }
 
         const token = getCookie('token');
@@ -179,7 +182,6 @@
         }
 
         await oauthCallbackHandler();
-
         form = $page.url.searchParams.get('form');
         loaded = true;
 
@@ -244,13 +246,13 @@
                                 <div class="mb-1">
                                     <div class="text-2xl font-medium">
                                         {#if $config?.onboarding ?? false}
-                                            {$i18n.t`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME }}
+                                            {$i18n.t('Get started with {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else if mode === 'ldap'}
-                                            {$i18n.t`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME }}
+                                            {$i18n.t('Sign in to {{WEBUI_NAME}} with LDAP', { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else if mode === 'signin'}
-                                            {$i18n.t`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME }}
+                                            {$i18n.t('Sign in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
                                         {:else}
-                                            {$i18n.t`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME }}
+                                            {$i18n.t('Sign up to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
                                         {/if}
                                     </div>
 
@@ -402,7 +404,7 @@
                                                     </button>
                                                 </div>
                                             {/if}
-                                        {/if}
+                                        {/else}
                                     {/if}
                                 </div>
                             </form>
@@ -490,11 +492,7 @@
                                                     d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
                                                 />
                                             </svg>
-                                            <span>
-                                                {$i18n.t('Continue with {{provider}}', {
-                                                    provider: $config?.oauth?.providers?.oidc ?? 'SSO'
-                                                })}
-                                            </span>
+                                            <span>{$i18n.t('Continue with {{provider}}', { provider: $config?.oauth?.providers?.oidc ?? 'SSO' })}</span>
                                         </button>
                                     {/if}
 
