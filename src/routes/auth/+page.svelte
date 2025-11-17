@@ -16,6 +16,7 @@
     import ReCaptcha from '$lib/components/auth/ReCaptcha.svelte';
 
     const i18n = getContext('i18n');
+
     let loaded = false;
     let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
     let form = null;
@@ -30,7 +31,7 @@
     const setSessionUser = async (sessionUser, redirectPath: string | null = null) => {
         if (sessionUser) {
             console.log(sessionUser);
-            toast.success($i18n.t(`You're now logged in.`));
+            toast.success($i18n.t`You're now logged in.`);
             if (sessionUser.token) {
                 localStorage.token = sessionUser.token;
             }
@@ -47,7 +48,7 @@
 
     const signInHandler = async () => {
         const sessionUser = await userSignIn(email, password).catch((error) => {
-            toast.error(`${error}`);
+            toast.error`${error}`;
             return null;
         });
         await setSessionUser(sessionUser);
@@ -64,22 +65,26 @@
                 return;
             }
         }
-        const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name), recaptchaToken).catch(
-            (error) => {
-                toast.error(`${error}`);
-                if (recaptchaComponent) {
-                    recaptchaComponent.reset();
-                    recaptchaToken = '';
-                }
-                return null;
+        const sessionUser = await userSignUp(
+            name,
+            email,
+            password,
+            generateInitialsImage(name),
+            recaptchaToken
+        ).catch((error) => {
+            toast.error`${error}`;
+            if (recaptchaComponent) {
+                recaptchaComponent.reset();
+                recaptchaToken = '';
             }
-        );
+            return null;
+        });
         await setSessionUser(sessionUser);
     };
 
     const ldapSignInHandler = async () => {
         const sessionUser = await ldapUserSignIn(ldapUsername, password).catch((error) => {
-            toast.error(`${error}`);
+            toast.error`${error}`;
             return null;
         });
         await setSessionUser(sessionUser);
@@ -108,7 +113,7 @@
             return;
         }
         const sessionUser = await getSessionUser(token).catch((error) => {
-            toast.error(`${error}`);
+            toast.error`${error}`;
             return null;
         });
         if (!sessionUser) {
@@ -121,12 +126,10 @@
     const handleRecaptchaVerified = (event) => {
         recaptchaToken = event.detail.token;
     };
-
     const handleRecaptchaExpired = () => {
         recaptchaToken = '';
         toast.warning('reCAPTCHA已过期，请重新验证');
     };
-
     const handleRecaptchaError = () => {
         recaptchaToken = '';
         toast.error('reCAPTCHA验证出错，请刷新页面重试');
@@ -136,7 +139,7 @@
 
     async function setLogoImage() {
         await tick();
-        const logo = document.getElementById('logo');
+        const logo = document.getElementById('logo') as HTMLImageElement | null;
         if (logo) {
             const isDarkMode = document.documentElement.classList.contains('dark');
             if (isDarkMode) {
@@ -179,9 +182,7 @@
 </script>
 
 <svelte:head>
-    <title>
-        {`${$WEBUI_NAME}`}
-    </title>
+    <title>{$WEBUI_NAME}</title>
 </svelte:head>
 
 <OnBoarding
@@ -238,13 +239,13 @@
                                 <div class="mb-1">
                                     <div class=" text-2xl font-medium">
                                         {#if $config?.onboarding ?? false}
-                                            {$i18n.t(`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME }}
                                         {:else if mode === 'ldap'}
-                                            {$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME }}
                                         {:else if mode === 'signin'}
-                                            {$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME }}
                                         {:else}
-                                            {$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+                                            {$i18n.t`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME }}
                                         {/if}
                                     </div>
                                     {#if $config?.onboarding ?? false}
