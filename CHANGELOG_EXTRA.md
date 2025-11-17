@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.36.1] - 2025.11.07
+
+### Changed
+
+- 合并官方 0.6.36 改动
+
+## [0.6.34.1] - 2025.10.17
+
+### Changed
+
+- 合并官方 0.6.34 改动
+
+## [0.6.33.1] - 2025.10.08
+
+### Changed
+
+- 合并官方 0.6.33 改动
+
+## [0.6.32.1] - 2025.09.29
+
+### Added
+
+- 支持支付宝当面付/订单码支付 (管理员面板-设置-积分-支付宝)
+
+### Changed
+
+- 合并官方 0.6.32 改动
+
+## [0.6.31.1] - 2025.09.26
+
+### Changed
+
+- 移除 Markdown 编辑器
+- 移除自定义代码块样式
+- 合并官方 0.6.31 改动
+
+### Fixed
+
+- 修复使用 `@` 选择模型时模型图标加载异常的问题
+
+## [0.6.30.1] - 2025.09.18
+
+### Changed
+
+- 合并官方 0.6.30 改动
+
 ## [0.6.28.1] - 2025.09.11
 
 ### Changed

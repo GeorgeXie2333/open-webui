@@ -25,6 +25,7 @@ from open_webui.models.users import (
     UserModel,
     UserListResponse,
     UserInfoListResponse,
+    UserIdNameListResponse,
     UserRoleUpdateForm,
     Users,
     UserSettings,
@@ -127,6 +128,23 @@ async def get_all_users(
     return user_data
 
 
+@router.get("/search", response_model=UserIdNameListResponse)
+async def search_users(
+    query: Optional[str] = None,
+    user=Depends(get_verified_user),
+):
+    limit = PAGE_ITEM_COUNT
+
+    page = 1  # Always return the first page for search
+    skip = (page - 1) * limit
+
+    filter = {}
+    if query:
+        filter["query"] = query
+
+    return Users.get_users(filter=filter, skip=skip, limit=limit)
+
+
 ############################
 # User Groups
 ############################
@@ -166,6 +184,7 @@ class SharingPermissions(BaseModel):
     public_knowledge: bool = True
     public_prompts: bool = True
     public_tools: bool = True
+    public_notes: bool = True
 
 
 class ChatPermissions(BaseModel):
@@ -369,7 +388,7 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
         )
 
 
-@router.get("/{user_id}/oauth/sessions", response_model=Optional[dict])
+@router.get("/{user_id}/oauth/sessions")
 async def get_user_oauth_sessions_by_id(user_id: str, user=Depends(get_admin_user)):
     sessions = OAuthSessions.get_sessions_by_user_id(user_id)
     if sessions and len(sessions) > 0:

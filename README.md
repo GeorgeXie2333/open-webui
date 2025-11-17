@@ -44,6 +44,16 @@ ghcr.io/ovinc-cn/openwebui:<版本号>
 
 ## 拓展配置
 
+### 支付宝当面付/订单码支付
+
+推荐使用 [“订单码支付”](https://open.alipay.com/api/detail?code=I1080300001000068149&index=0) 功能，[“当面付”](https://open.alipay.com/api/detail?code=I1080300001000041016&index=0) 处于产品调整中，后续支付宝可能会下线这个支付方式
+
+配置网关地址和授权回调地址为 `https://example.com/api/v1/credit/callback/alipay` 其中 `example.com` 替换为你的 WebUI 地址
+
+使用支付宝密钥工具生成的私钥无法直接使用，需要通过 “格式转换” 转换为 PKCS1 格式，转换后工具会提示 “已转换为 PKCS1 格式”
+
+![alipay_private_key](docs/alipay_private_key.png)
+
 ### 兑换码功能
 
 需要使用 Redis 避免被多次兑换
@@ -93,17 +103,6 @@ SMTP_HOST=smtp.email.qq.com
 SMTP_PORT=465
 SMTP_USERNAME=example@qq.com
 SMTP_PASSWORD=password
-```
-
-### 增强的代码块和其他样式
-
-默认是开启状态，如需关闭请设置环境变量为非 `true` 的值
-
-```
-# 增强的代码块
-STYLE_USE_ENHANCED_CODE_BLOCK=true
-# 输入框右下角额外的 Markdown 编辑器
-STYLE_USE_ENHANCED_MARKDOWN_EDITOR=true
 ```
 
 ### 品牌/LOGO定制能力说明

@@ -51,6 +51,8 @@
 	export let selected = false;
 	export let shiftKey = false;
 
+	export let onDragEnd = () => {};
+
 	let chat = null;
 
 	let mouseOver = false;
@@ -217,11 +219,13 @@
 		y = event.clientY;
 	};
 
-	const onDragEnd = (event) => {
+	const onDragEndHandler = (event) => {
 		event.stopPropagation();
 
 		itemElement.style.opacity = '1'; // Reset visual cue after drag
 		dragged = false;
+
+		onDragEnd(event);
 	};
 
 	const onClickOutside = (event) => {
@@ -241,7 +245,7 @@
 			// Event listener for when dragging occurs (optional)
 			itemElement.addEventListener('drag', onDrag);
 			// Event listener for when dragging ends
-			itemElement.addEventListener('dragend', onDragEnd);
+			itemElement.addEventListener('dragend', onDragEndHandler);
 		}
 	});
 
@@ -251,7 +255,7 @@
 
 			itemElement.removeEventListener('dragstart', onDragStart);
 			itemElement.removeEventListener('drag', onDrag);
-			itemElement.removeEventListener('dragend', onDragEnd);
+			itemElement.removeEventListener('dragend', onDragEndHandler);
 		}
 	});
 
@@ -279,7 +283,10 @@
 
 		setTimeout(() => {
 			const input = document.getElementById(`chat-title-input-${id}`);
-			if (input) input.focus();
+			if (input) {
+				input.focus();
+				input.select();
+			}
 		}, 0);
 	};
 
@@ -349,17 +356,19 @@
 {/if}
 
 <div
+	id="sidebar-chat-group"
 	bind:this={itemElement}
 	class=" w-full {className} relative group"
 	draggable={draggable && !confirmEdit}
 >
 	{#if confirmEdit}
 		<div
-			class=" w-full flex justify-between rounded-lg px-[11px] py-[6px] {id === $chatId ||
+			id="sidebar-chat-item"
+			class=" w-full flex justify-between rounded-xl px-[11px] py-[6px] {id === $chatId ||
 			confirmEdit
-				? 'bg-gray-100 dark:bg-gray-900'
+				? 'bg-gray-100 dark:bg-gray-900 selected'
 				: selected
-					? 'bg-gray-100 dark:bg-gray-950'
+					? 'bg-gray-100 dark:bg-gray-950 selected'
 					: 'group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis relative {generating
 				? 'cursor-not-allowed'
 				: ''}"
@@ -406,61 +415,58 @@
 			/>
 		</div>
 	{:else}
-		<Tooltip content={title}>
-			<a
-				class=" w-full flex justify-between rounded-lg px-[11px] py-[6px] {id === $chatId ||
-				confirmEdit
-					? 'bg-gray-100 dark:bg-gray-900'
-					: selected
-						? 'bg-gray-100 dark:bg-gray-950'
-						: ' group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
-				href="/c/{id}"
-				on:click={() => {
-					dispatch('select');
+		<a
+			id="sidebar-chat-item"
+			class=" w-full flex justify-between rounded-xl px-[11px] py-[6px] {id === $chatId ||
+			confirmEdit
+				? 'bg-gray-100 dark:bg-gray-900 selected'
+				: selected
+					? 'bg-gray-100 dark:bg-gray-950 selected'
+					: ' group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
+			href="/c/{id}"
+			on:click={() => {
+				dispatch('select');
 
-					if (
-						$selectedFolder &&
-						!($selectedFolder?.items?.chats.map((chat) => chat.id) ?? []).includes(id)
-					) {
-						selectedFolder.set(null); // Reset selected folder if the chat is not in it
-					}
+				if ($selectedFolder) {
+					selectedFolder.set(null);
+				}
 
-					if ($mobile) {
-						showSidebar.set(false);
-					}
-				}}
-				on:dblclick={async (e) => {
-					e.preventDefault();
-					e.stopPropagation();
+				if ($mobile) {
+					showSidebar.set(false);
+				}
+			}}
+			on:dblclick={async (e) => {
+				e.preventDefault();
+				e.stopPropagation();
 
-					doubleClicked = true;
-					renameHandler();
-				}}
-				on:mouseenter={(e) => {
-					mouseOver = true;
-				}}
-				on:mouseleave={(e) => {
-					mouseOver = false;
-				}}
-				on:focus={(e) => {}}
-				draggable="false"
-			>
-				<div class=" flex self-center flex-1 w-full">
-					<div dir="auto" class="text-left self-center overflow-hidden w-full h-[20px]">
-						{title}
-					</div>
+				doubleClicked = true;
+				renameHandler();
+			}}
+			on:mouseenter={(e) => {
+				mouseOver = true;
+			}}
+			on:mouseleave={(e) => {
+				mouseOver = false;
+			}}
+			on:focus={(e) => {}}
+			draggable="false"
+		>
+			<div class=" flex self-center flex-1 w-full">
+				<div dir="auto" class="text-left self-center overflow-hidden w-full h-[20px] truncate">
+					{title}
 				</div>
-			</a>
-		</Tooltip>
+			</div>
+		</a>
 	{/if}
 
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
+		id="sidebar-chat-item-menu"
 		class="
         {id === $chatId || confirmEdit
-			? 'from-gray-100 dark:from-gray-900'
+			? 'from-gray-100 dark:from-gray-900 selected'
 			: selected
-				? 'from-gray-100 dark:from-gray-950'
+				? 'from-gray-100 dark:from-gray-950 selected'
 				: 'invisible group-hover:visible from-gray-100 dark:from-gray-950'}
             absolute {className === 'pr-2'
 			? 'right-[8px]'

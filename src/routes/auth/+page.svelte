@@ -14,6 +14,7 @@
     import OnBoarding from '$lib/components/OnBoarding.svelte';
     import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
     import ReCaptcha from '$lib/components/auth/ReCaptcha.svelte';
+
     const i18n = getContext('i18n');
     let loaded = false;
     let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
@@ -25,6 +26,7 @@
     let recaptchaToken = '';
     let ldapUsername = '';
     let recaptchaComponent;
+
     const setSessionUser = async (sessionUser, redirectPath: string | null = null) => {
         if (sessionUser) {
             console.log(sessionUser);
@@ -36,12 +38,13 @@
             await user.set(sessionUser);
             await config.set(await getBackendConfig());
             if (!redirectPath) {
-                redirectPath = $page.url.searchParams.get('redirectPath') || '/';
+                redirectPath = $page.url.searchParams.get('redirect') || '/';
             }
             goto(redirectPath);
             localStorage.removeItem('redirectPath');
         }
     };
+
     const signInHandler = async () => {
         const sessionUser = await userSignIn(email, password).catch((error) => {
             toast.error(`${error}`);
@@ -49,6 +52,7 @@
         });
         await setSessionUser(sessionUser);
     };
+
     const signUpHandler = async () => {
         if ($config?.ENABLE_RECAPTCHA && mode === 'signup' && !recaptchaToken) {
             toast.error('请完成reCAPTCHA验证');
@@ -72,6 +76,7 @@
         );
         await setSessionUser(sessionUser);
     };
+
     const ldapSignInHandler = async () => {
         const sessionUser = await ldapUserSignIn(ldapUsername, password).catch((error) => {
             toast.error(`${error}`);
@@ -79,6 +84,7 @@
         });
         await setSessionUser(sessionUser);
     };
+
     const submitHandler = async () => {
         if (mode === 'ldap') {
             await ldapSignInHandler();
@@ -88,6 +94,7 @@
             await signUpHandler();
         }
     };
+
     const oauthCallbackHandler = async () => {
         // Get the value of the 'token' cookie
         function getCookie(name) {
@@ -110,18 +117,23 @@
         localStorage.token = token;
         await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
     };
+
     const handleRecaptchaVerified = (event) => {
         recaptchaToken = event.detail.token;
     };
+
     const handleRecaptchaExpired = () => {
         recaptchaToken = '';
         toast.warning('reCAPTCHA已过期，请重新验证');
     };
+
     const handleRecaptchaError = () => {
         recaptchaToken = '';
         toast.error('reCAPTCHA验证出错，请刷新页面重试');
     };
+
     let onboarding = false;
+
     async function setLogoImage() {
         await tick();
         const logo = document.getElementById('logo');
@@ -140,6 +152,7 @@
             }
         }
     }
+
     onMount(async () => {
         const redirectPath = $page.url.searchParams.get('redirect');
         if ($user !== undefined) {
@@ -438,128 +451,4 @@
                                     {/if}
                                     {#if $config?.oauth?.providers?.microsoft}
                                         <button
-                                            class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-                                            on:click={() => {
-                                                window.location.href = `${WEBUI_BASE_URL}/oauth/microsoft/login`;
-                                            }}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 21 21"
-                                                class="size-6 mr-3"
-                                            >
-                                                <rect x="1" y="1" width="9" height="9" fill="#f25022" /><rect
-                                                    x="1"
-                                                    y="11"
-                                                    width="9"
-                                                    height="9"
-                                                    fill="#00a4ef"
-                                                /><rect x="11" y="1" width="9" height="9" fill="#7fba00" /><rect
-                                                    x="11"
-                                                    y="11"
-                                                    width="9"
-                                                    height="9"
-                                                    fill="#ffb900"
-                                                />
-                                            </svg>
-                                            <span>{$i18n.t('Continue with {{provider}}', { provider: 'Microsoft' })}</span>
-                                        </button>
-                                    {/if}
-                                    {#if $config?.oauth?.providers?.github}
-                                        <button
-                                            class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-                                            on:click={() => {
-                                                window.location.href = `${WEBUI_BASE_URL}/oauth/github/login`;
-                                            }}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                viewBox="0 0 24 24"
-                                                class="size-6 mr-3"
-                                            >
-                                                <path
-                                                    fill="currentColor"
-                                                    d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.92 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57C20.565 21.795 24 17.31 24 12c0-6.63-5.37-12-12-12z"
-                                                />
-                                            </svg>
-                                            <span>{$i18n.t('Continue with {{provider}}', { provider: 'GitHub' })}</span>
-                                        </button>
-                                    {/if}
-                                    {#if $config?.oauth?.providers?.oidc}
-                                        <button
-                                            class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-                                            on:click={() => {
-                                                window.location.href = `${WEBUI_BASE_URL}/oauth/oidc/login`;
-                                            }}
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="1.5"
-                                                stroke="currentColor"
-                                                class="size-6 mr-3"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
-                                                />
-                                            </svg>
-                                            <span
-                                                >{$i18n.t('Continue with {{provider}}', {
-                                                    provider: $config?.oauth?.providers?.oidc ?? 'SSO'
-                                                })}</span
-                                            >
-                                        </button>
-                                    {/if}
-                                </div>
-                            {/if}
-                            {#if $config?.features.enable_ldap && $config?.features.enable_login_form}
-                                <div class="mt-2">
-                                    <button
-                                        class="flex justify-center items-center text-xs w-full text-center underline"
-                                        type="button"
-                                        on:click={() => {
-                                            if (mode === 'ldap')
-                                                mode = ($config?.onboarding ?? false) ? 'signup' : 'signin';
-                                            else mode = 'ldap';
-                                        }}
-                                    >
-                                        <span
-                                            >{mode === 'ldap'
-                                                ? $i18n.t('Continue with Email')
-                                                : $i18n.t('Continue with LDAP')}</span
-                                        >
-                                    </button>
-                                </div>
-                            {/if}
-                        </div>
-                    </div>
-                {/if}
-            </div>
-        </div>
-        {#if $config?.metadata?.login_footer}
-            <div class="max-w-3xl mx-auto">
-                <div class="mt-2 text-[0.7rem] text-gray-500 dark:text-gray-400 marked">
-                    {@html DOMPurify.sanitize(marked($config?.metadata?.login_footer))}
-                </div>
-            </div>
-        {/if}
-    {/if}
-</div>
-
-<style>
-    .auth-page {
-        background-color: white !important;
-        background-image: url('/static/banner.jpg');
-        background-repeat: no-repeat;
-        background-position: top center;
-        background-size: 100% auto;
-        background-attachment: fixed;
-    }
-    /* 确保暗色主题下背景也是白色 */
-    :global(.dark) .auth-page {
-        background-color: white !important;
-    }
-</style>
+                                            class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover

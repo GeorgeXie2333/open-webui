@@ -107,8 +107,18 @@ class UserInfoResponse(BaseModel):
     role: str
 
 
+class UserIdNameResponse(BaseModel):
+    id: str
+    name: str
+
+
 class UserInfoListResponse(BaseModel):
     users: list[UserInfoResponse]
+    total: int
+
+
+class UserIdNameListResponse(BaseModel):
+    users: list[UserIdNameResponse]
     total: int
 
 
@@ -216,7 +226,7 @@ class UsersTable:
         filter: Optional[dict] = None,
         skip: Optional[int] = None,
         limit: Optional[int] = None,
-    ) -> UserListResponse:
+    ) -> dict:
         with get_db() as db:
             query = db.query(User)
 
