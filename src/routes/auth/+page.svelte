@@ -111,9 +111,8 @@
 
     const oauthCallbackHandler = async () => {
         function getCookie(name: string) {
-            const match = document.cookie.match(
-                new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\\]\\/+^])/g, '\\$1') + '=([^;]*)')
-            );
+            const pattern = new RegExp(`(?:^|; )${name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1')}=([^;]*)`);
+            const match = document.cookie.match(pattern);
             return match ? decodeURIComponent(match[1]) : null;
         }
 
