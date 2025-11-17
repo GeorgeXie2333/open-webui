@@ -404,7 +404,7 @@
                                                     </button>
                                                 </div>
                                             {/if}
-                                        {/else}
+                                        {/if}
                                     {/if}
                                 </div>
                             </form>
