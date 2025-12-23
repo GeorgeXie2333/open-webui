@@ -441,36 +441,52 @@ verify_email_template = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>%(title)s</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(90deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-align: center; padding: 30px 20px; }
-        .header h1 { margin: 0; font-size: 28px; font-weight: 300; }
-        .content { padding: 40px 30px; }
-        .content h2 { color: #333333; margin-top: 0; font-size: 24px; font-weight: 600; }
-        .content p { color: #666666; line-height: 1.6; margin: 15px 0; font-size: 16px; }
-        .button { display: inline-block; background: linear-gradient(90deg, #667eea 0%%, #764ba2 100%%); color: #667eea; text-decoration: none; padding: 15px 30px; border-radius: 50px; font-weight: 600; margin: 20px 0; text-align: center; font-size: 16px; }
-        .button:hover { opacity: 0.9; }
-        .footer { background-color: #f8f9fa; color: #6c757d; text-align: center; padding: 20px; font-size: 14px; }
-        .logo { width: 50px; height: 50px; margin: 0 auto 20px; background: #ffffff; border-radius: 50%%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #667eea; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; -webkit-text-size-adjust: 100%%; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        /* 黑色背景以融合黑色Logo */
+        .header { background-color: #000000; padding: 40px 20px; text-align: center; }
+        .logo-img { max-width: 150px; height: auto; display: block; margin: 0 auto; }
+        .content { padding: 40px 40px; text-align: left; }
+        .content h2 { color: #1a1a1a; margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+        .content p { color: #555555; line-height: 1.7; margin: 0 0 20px; font-size: 16px; }
+        .btn-container { text-align: center; margin: 35px 0; }
+        /* 按钮使用醒目的蓝色，与黑色背景形成对比 */
+        .button { display: inline-block; background-color: #007bff; color: #ffffff !important; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(0, 123, 255, 0.2); }
+        .button:hover { background-color: #0056b3; }
+        .link-box { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 6px; font-family: Monaco, Consolas, monospace; font-size: 13px; color: #666; word-break: break-all; margin-top: 20px; }
+        .footer { background-color: #f8f9fa; color: #999999; text-align: center; padding: 30px 20px; font-size: 13px; border-top: 1px solid #eeeeee; }
+        .footer p { margin: 5px 0; }
+        
+        @media only screen and (max-width: 600px) {
+            .container { margin: 0; border-radius: 0; width: 100%%; }
+            .content { padding: 30px 20px; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">Comi</div>
-            <h1>%(title)s</h1>
+            <!-- 使用提供的黑色背景Logo -->
+            <img src="https://img.comiai.cc/file/1766468774804_64a473739b885d30233514a315446bfb.png" alt="Logo" class="logo-img">
         </div>
         <div class="content">
-            <h2>点击下方链接验证您的邮箱</h2>
-            <p>您好！感谢您注册我们的服务。请点击下方按钮来验证您的邮箱地址。</p>
-            <p style="text-align: center;">
-                <a href="%(link)s" class="button">验证邮箱</a>
-            </p>
-            <p>如果按钮无法点击，请复制以下链接到浏览器地址栏：</p>
-            <p style="word-break: break-all; background-color: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace;">%(link)s</p>
-            <p><strong>注意：</strong>此链接将在24小时后失效。</p>
+            <h2>验证您的电子邮箱</h2>
+            <p>您好！感谢您注册我们的服务。</p>
+            <p>为了保障您的账户安全并完成注册流程，我们需要确认这是您的电子邮箱地址。请点击下方按钮进行验证：</p>
+            
+            <div class="btn-container">
+                <a href="%(link)s" class="button" target="_blank">立即验证邮箱</a>
+            </div>
+
+            <p style="font-size: 14px; color: #888;">链接将在 24 小时后失效。如果您并未发起此注册，请直接忽略此邮件。</p>
+
+            <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+                <p style="font-size: 14px; margin-bottom: 10px;">如果按钮无法点击，请复制以下链接到浏览器地址栏：</p>
+                <div class="link-box">%(link)s</div>
+            </div>
         </div>
         <div class="footer">
+            <p>&copy; Comi AI. All rights reserved.</p>
             <p>此邮件由系统自动发送，请勿回复。</p>
         </div>
     </div>
@@ -487,45 +503,59 @@ password_reset_email_template = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>%(title)s</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 0; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(90deg, #667eea 0%%, #764ba2 100%%); color: #ffffff; text-align: center; padding: 30px 20px; }
-        .header h1 { margin: 0; font-size: 28px; font-weight: 300; }
-        .content { padding: 40px 30px; }
-        .content h2 { color: #333333; margin-top: 0; font-size: 24px; font-weight: 600; }
-        .content p { color: #666666; line-height: 1.6; margin: 15px 0; font-size: 16px; }
-        .button { display: inline-block; background: linear-gradient(90deg, #667eea 0%%, #764ba2 100%%); color: #667eea; text-decoration: none; padding: 15px 30px; border-radius: 50px; font-weight: 600; margin: 20px 0; text-align: center; font-size: 16px; }
-        .button:hover { opacity: 0.9; }
-        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .footer { background-color: #f8f9fa; color: #6c757d; text-align: center; padding: 20px; font-size: 14px; }
-        .logo { width: 50px; height: 50px; margin: 0 auto 20px; background: #ffffff; border-radius: 50%%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #667eea; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 0; -webkit-text-size-adjust: 100%%; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        /* 黑色背景以融合黑色Logo */
+        .header { background-color: #000000; padding: 40px 20px; text-align: center; }
+        .logo-img { max-width: 150px; height: auto; display: block; margin: 0 auto; }
+        .content { padding: 40px 40px; text-align: left; }
+        .content h2 { color: #1a1a1a; margin-top: 0; margin-bottom: 20px; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+        .content p { color: #555555; line-height: 1.7; margin: 0 0 20px; font-size: 16px; }
+        .btn-container { text-align: center; margin: 35px 0; }
+        /* 红色/橙色按钮用于重置密码，暗示安全/重要性 */
+        .button { display: inline-block; background-color: #e63946; color: #ffffff !important; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 16px; transition: background-color 0.3s; box-shadow: 0 4px 6px rgba(230, 57, 70, 0.2); }
+        .button:hover { background-color: #c92a37; }
+        .warning-box { background-color: #fff8e1; border-left: 4px solid #ffc107; padding: 15px; margin: 25px 0; border-radius: 4px; color: #856404; font-size: 14px; }
+        .link-box { background-color: #f8f9fa; border: 1px solid #e9ecef; padding: 15px; border-radius: 6px; font-family: Monaco, Consolas, monospace; font-size: 13px; color: #666; word-break: break-all; margin-top: 20px; }
+        .footer { background-color: #f8f9fa; color: #999999; text-align: center; padding: 30px 20px; font-size: 13px; border-top: 1px solid #eeeeee; }
+        .footer p { margin: 5px 0; }
+
+        @media only screen and (max-width: 600px) {
+            .container { margin: 0; border-radius: 0; width: 100%%; }
+            .content { padding: 30px 20px; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">Comi</div>
-            <h1>%(title)s</h1>
+            <img src="https://img.comiai.cc/file/1766468774804_64a473739b885d30233514a315446bfb.png" alt="Logo" class="logo-img">
         </div>
         <div class="content">
             <h2>重置您的密码</h2>
-            <p>您好！我们收到了重置您账户密码的请求。</p>
-            <p>请点击下方按钮来重置您的密码：</p>
-            <p style="text-align: center;">
-                <a href="%(link)s" class="button">重置密码</a>
-            </p>
-            <p>如果按钮无法点击，请复制以下链接到浏览器地址栏：</p>
-            <p style="word-break: break-all; background-color: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace;">%(link)s</p>
-            <div class="warning">
+            <p>您好！我们刚刚收到了重置您账户密码的请求。</p>
+            <p>如果是您本人的操作，请点击下方按钮设置新密码：</p>
+            
+            <div class="btn-container">
+                <a href="%(link)s" class="button" target="_blank">重置密码</a>
+            </div>
+
+            <div class="warning-box">
                 <strong>重要提醒：</strong>
-                <ul style="margin: 10px 0 0 20px;">
-                    <li>此链接将在1小时后失效</li>
-                    <li>如果您没有请求重置密码，请忽略此邮件</li>
-                    <li>为了您的账户安全，建议设置强密码</li>
+                <ul style="margin: 5px 0 0 20px; padding: 0;">
+                    <li>此链接将在 1 小时后失效。</li>
+                    <li>为了账户安全，请勿将此链接转发给他人。</li>
+                    <li>如果您没有请求重置密码，请忽略此邮件，您的账户依然安全。</li>
                 </ul>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
+                <p style="font-size: 14px; margin-bottom: 10px;">如果按钮无法点击，请复制以下链接到浏览器地址栏：</p>
+                <div class="link-box">%(link)s</div>
             </div>
         </div>
         <div class="footer">
+            <p>&copy; Comi AI. All rights reserved.</p>
             <p>此邮件由系统自动发送，请勿回复。</p>
         </div>
     </div>
