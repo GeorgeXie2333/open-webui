@@ -636,8 +636,7 @@ def send_verify_email(email: str):
     send_email(
         receiver=email,
         subject=f"Comi AI 邮箱验证",
-        body=verify_email_template
-        % {"title": f"Comi AI 邮箱验证", "link": link},
+        body=verify_email_template % {"title": f"Comi AI 邮箱验证", "link": link},
     )
 
 
@@ -649,7 +648,9 @@ def send_password_reset_email(email: str):
         ),
     )
     code = f"{uuid.uuid4().hex}{uuid.uuid1().hex}"
-    redis.set(name=get_password_reset_key(code=code), value=email, ex=timedelta(hours=1))
+    redis.set(
+        name=get_password_reset_key(code=code), value=email, ex=timedelta(hours=1)
+    )
     link = f"{WEBUI_URL.value.rstrip('/')}/auth/reset-password?token={code}"
     send_email(
         receiver=email,
@@ -690,24 +691,19 @@ async def verify_recaptcha(token: str, secret_key: str) -> bool:
     """
     if not token or not secret_key:
         return False
-        
+
     try:
-        data = {
-            'secret': secret_key,
-            'response': token
-        }
-        
+        data = {"secret": secret_key, "response": token}
+
         response = requests.post(
-            'https://www.recaptcha.net/recaptcha/api/siteverify',
-            data=data,
-            timeout=10
+            "https://www.recaptcha.net/recaptcha/api/siteverify", data=data, timeout=10
         )
-        
+
         if response.status_code == 200:
             result = response.json()
-            return result.get('success', False)
-        
+            return result.get("success", False)
+
     except Exception as e:
         log.error(f"reCAPTCHA验证失败: {str(e)}")
-        
+
     return False

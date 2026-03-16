@@ -347,18 +347,18 @@ async def update_password(
 async def forgot_password(form_data: ForgotPasswordForm):
     """发送密码重置邮件"""
     email = form_data.email.lower()
-    
+
     if not validate_email_format(email):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
         )
-    
+
     # 检查用户是否存在
     user = Users.get_user_by_email(email)
     if not user:
         # 为了安全起见，即使用户不存在也返回成功消息
         return {"message": "如果该邮箱地址已注册，您将收到密码重置邮件"}
-    
+
     try:
         send_password_reset_email(email)
         return {"message": "如果该邮箱地址已注册，您将收到密码重置邮件"}
@@ -377,28 +377,28 @@ async def reset_password(form_data: ResetPasswordForm):
     """使用token重置密码"""
     if not form_data.token or not form_data.new_password:
         raise HTTPException(400, detail="缺少必要参数")
-    
+
     # 验证密码长度
     if len(form_data.new_password.encode("utf-8")) > 72:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.PASSWORD_TOO_LONG,
         )
-    
+
     # 验证token并获取邮箱
     email = verify_password_reset_token(form_data.token)
     if not email:
         raise HTTPException(400, detail="重置链接无效或已过期")
-    
+
     # 获取用户
     user = Users.get_user_by_email(email)
     if not user:
         raise HTTPException(404, detail="用户不存在")
-    
+
     # 更新密码
     hashed_password = get_password_hash(form_data.new_password)
     success = Auths.update_user_password_by_id(user.id, hashed_password)
-    
+
     if success:
         return {"message": "密码重置成功"}
     else:
@@ -878,16 +878,13 @@ async def signup(
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST, detail="reCAPTCHA验证是必需的"
             )
-        
+
         is_valid = await verify_recaptcha(
-            form_data.recaptcha_token, 
-            RECAPTCHA_SECRET_KEY.value
+            form_data.recaptcha_token, RECAPTCHA_SECRET_KEY.value
         )
-        
+
         if not is_valid:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, detail="reCAPTCHA验证失败"
-            )
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="reCAPTCHA验证失败")
 
     # check for email domain whitelist
     email_domain_whitelist = [
