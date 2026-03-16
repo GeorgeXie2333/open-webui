@@ -23,6 +23,7 @@ from open_webui.models.users import UserModel
 
 from open_webui.env import (
     ENABLE_FORWARD_USER_INFO_HEADERS,
+    FORWARD_SESSION_INFO_HEADER_CHAT_ID,
 )
 
 from fastapi import (
@@ -37,17 +38,21 @@ from fastapi import (
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, validator
-from starlette.background import BackgroundTask
+
 from sqlalchemy.orm import Session
 
 from open_webui.internal.db import get_session
 
 
 from open_webui.models.models import Models
+from open_webui.models.access_grants import AccessGrants
+from open_webui.models.groups import Groups
 from open_webui.utils.credit.usage import CreditDeduct
 from open_webui.utils.credit.utils import check_credit_by_user_id
 from open_webui.utils.misc import (
     calculate_sha256,
+    cleanup_response,
+    stream_wrapper,
 )
 from open_webui.utils.payload import (
     apply_model_params_to_body_ollama,
@@ -55,9 +60,6 @@ from open_webui.utils.payload import (
     apply_system_prompt_to_body,
 )
 from open_webui.utils.auth import get_admin_user, get_verified_user
-from open_webui.utils.access_control import has_access
-
-
 from open_webui.config import (
     UPLOAD_DIR,
 )
@@ -105,16 +107,6 @@ async def send_get_request(url, key=None, user: UserModel = None):
         return None
 
 
-async def cleanup_response(
-    response: Optional[aiohttp.ClientResponse],
-    session: Optional[aiohttp.ClientSession],
-):
-    if response:
-        response.close()
-    if session:
-        await session.close()
-
-
 async def send_post_request(
     url: str,
     payload: Union[str, bytes],
@@ -126,6 +118,7 @@ async def send_post_request(
 ):
 
     r = None
+    streaming = False
     try:
         session = aiohttp.ClientSession(
             trust_env=True, timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
@@ -139,7 +132,7 @@ async def send_post_request(
         if ENABLE_FORWARD_USER_INFO_HEADERS and user:
             headers = include_user_info_headers(headers, user)
             if metadata and metadata.get("chat_id"):
-                headers["X-OpenWebUI-Chat-Id"] = metadata.get("chat_id")
+                headers[FORWARD_SESSION_INFO_HEADER_CHAT_ID] = metadata.get("chat_id")
 
         r = await session.post(
             url,
@@ -170,13 +163,11 @@ async def send_post_request(
             if content_type:
                 response_headers["Content-Type"] = content_type
 
+            streaming = True
             return StreamingResponse(
-                r.content,
+                stream_wrapper(user, payload["model"], payload, r, session),
                 status_code=r.status,
                 headers=response_headers,
-                background=BackgroundTask(
-                    cleanup_response, response=r, session=session
-                ),
             )
         else:
             res = await r.json()
@@ -192,7 +183,7 @@ async def send_post_request(
             detail=detail if e else "Open WebUI: Server Connection Error",
         )
     finally:
-        if not stream:
+        if not streaming:
             await cleanup_response(r, session)
 
 
@@ -428,13 +419,30 @@ async def get_all_models(request: Request, user: UserModel = None):
 
 async def get_filtered_models(models, user, db=None):
     # Filter models based on user access control
+    model_ids = [model["model"] for model in models.get("models", [])]
+    model_infos = {
+        model_info.id: model_info
+        for model_info in Models.get_models_by_ids(model_ids, db=db)
+    }
+    user_group_ids = {
+        group.id for group in Groups.get_groups_by_member_id(user.id, db=db)
+    }
+
+    # Batch-fetch accessible resource IDs in a single query instead of N has_access calls
+    accessible_model_ids = AccessGrants.get_accessible_resource_ids(
+        user_id=user.id,
+        resource_type="model",
+        resource_ids=list(model_infos.keys()),
+        permission="read",
+        user_group_ids=user_group_ids,
+        db=db,
+    )
+
     filtered_models = []
     for model in models.get("models", []):
-        model_info = Models.get_model_by_id(model["model"], db=db)
+        model_info = model_infos.get(model["model"])
         if model_info:
-            if user.id == model_info.user_id or has_access(
-                user.id, type="read", access_control=model_info.access_control, db=db
-            ):
+            if user.id == model_info.user_id or model_info.id in accessible_model_ids:
                 filtered_models.append(model)
     return filtered_models
 
@@ -444,6 +452,9 @@ async def get_filtered_models(models, user, db=None):
 async def get_ollama_tags(
     request: Request, url_idx: Optional[int] = None, user=Depends(get_verified_user)
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     models = []
 
     if url_idx is None:
@@ -652,10 +663,6 @@ async def unload_model(
     await get_all_models(request, user=user)
     models = request.app.state.OLLAMA_MODELS
 
-    # Canonicalize model name (if not supplied with version)
-    if ":" not in model_name:
-        model_name = f"{model_name}:latest"
-
     if model_name not in models:
         raise HTTPException(
             status_code=400, detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model_name)
@@ -708,6 +715,9 @@ async def pull_model(
     url_idx: int = 0,
     user=Depends(get_admin_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     form_data = form_data.model_dump(exclude_none=True)
     form_data["model"] = form_data.get("model", form_data.get("name"))
 
@@ -739,6 +749,9 @@ async def push_model(
     url_idx: Optional[int] = None,
     user=Depends(get_admin_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     if url_idx is None:
         await get_all_models(request, user=user)
         models = request.app.state.OLLAMA_MODELS
@@ -778,6 +791,9 @@ async def create_model(
     url_idx: int = 0,
     user=Depends(get_admin_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     log.debug(f"form_data: {form_data}")
     url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
 
@@ -802,6 +818,9 @@ async def copy_model(
     url_idx: Optional[int] = None,
     user=Depends(get_admin_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     if url_idx is None:
         await get_all_models(request, user=user)
         models = request.app.state.OLLAMA_MODELS
@@ -862,6 +881,9 @@ async def delete_model(
     url_idx: Optional[int] = None,
     user=Depends(get_admin_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     form_data = form_data.model_dump(exclude_none=True)
     form_data["model"] = form_data.get("model", form_data.get("name"))
 
@@ -924,6 +946,9 @@ async def delete_model(
 async def show_model_info(
     request: Request, form_data: ModelNameForm, user=Depends(get_verified_user)
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     form_data = form_data.model_dump(exclude_none=True)
     form_data["model"] = form_data.get("model", form_data.get("name"))
 
@@ -996,16 +1021,19 @@ async def embed(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     log.info(f"generate_ollama_batch_embeddings {form_data}")
 
     if url_idx is None:
-        await get_all_models(request, user=user)
-        models = request.app.state.OLLAMA_MODELS
-
         model = form_data.model
 
-        if ":" not in model:
-            model = f"{model}:latest"
+        # Check if model is already in app state cache to avoid expensive get_all_models() call
+        models = request.app.state.OLLAMA_MODELS
+        if not models or model not in models:
+            await get_all_models(request, user=user)
+            models = request.app.state.OLLAMA_MODELS
 
         if model in models:
             url_idx = random.choice(models[model]["urls"])
@@ -1078,6 +1106,9 @@ async def embeddings(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     log.info(f"generate_ollama_embeddings {form_data}")
 
     # check credit
@@ -1085,13 +1116,13 @@ async def embeddings(
         check_credit_by_user_id(user_id=user.id, form_data={}, is_embedding=True)
 
     if url_idx is None:
-        await get_all_models(request, user=user)
-        models = request.app.state.OLLAMA_MODELS
-
         model = form_data.model
 
-        if ":" not in model:
-            model = f"{model}:latest"
+        # Check if model is already in app state cache to avoid expensive get_all_models() call
+        models = request.app.state.OLLAMA_MODELS
+        if not models or model not in models:
+            await get_all_models(request, user=user)
+            models = request.app.state.OLLAMA_MODELS
 
         if model in models:
             url_idx = random.choice(models[model]["urls"])
@@ -1164,7 +1195,7 @@ async def embeddings(
 
 class GenerateCompletionForm(BaseModel):
     model: str
-    prompt: str
+    prompt: Optional[str] = None
     suffix: Optional[str] = None
     images: Optional[list[str]] = None
     format: Optional[Union[dict, str]] = None
@@ -1185,15 +1216,14 @@ async def generate_completion(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
     if url_idx is None:
         await get_all_models(request, user=user)
         models = request.app.state.OLLAMA_MODELS
 
         model = form_data.model
-
-        if ":" not in model:
-            model = f"{model}:latest"
-
         if model in models:
             url_idx = random.choice(models[model]["urls"])
         else:
@@ -1276,8 +1306,14 @@ async def generate_chat_completion(
     user=Depends(get_verified_user),
     bypass_filter: Optional[bool] = False,
     bypass_system_prompt: bool = False,
-    db: Session = Depends(get_session),
 ):
+    if not request.app.state.config.ENABLE_OLLAMA_API:
+        raise HTTPException(status_code=503, detail="Ollama API is disabled")
+
+    # NOTE: We intentionally do NOT use Depends(get_session) here.
+    # Database operations (get_model_by_id, AccessGrants.has_access) manage their own short-lived sessions.
+    # This prevents holding a connection during the entire LLM call (30-60+ seconds),
+    # which would exhaust the connection pool under concurrent load.
     if BYPASS_MODEL_ACCESS_CONTROL:
         bypass_filter = True
 
@@ -1298,7 +1334,7 @@ async def generate_chat_completion(
         del payload["metadata"]
 
     model_id = payload["model"]
-    model_info = Models.get_model_by_id(model_id, db=db)
+    model_info = Models.get_model_by_id(model_id)
 
     if model_info:
         if model_info.base_model_id:
@@ -1320,13 +1356,17 @@ async def generate_chat_completion(
 
         # Check if user has access to the model
         if not bypass_filter and user.role == "user":
+            user_group_ids = {
+                group.id for group in Groups.get_groups_by_member_id(user.id)
+            }
             if not (
                 user.id == model_info.user_id
-                or has_access(
-                    user.id,
-                    type="read",
-                    access_control=model_info.access_control,
-                    db=db,
+                or AccessGrants.has_access(
+                    user_id=user.id,
+                    resource_type="model",
+                    resource_id=model_info.id,
+                    permission="read",
+                    user_group_ids=user_group_ids,
                 )
             ):
                 raise HTTPException(
@@ -1339,9 +1379,6 @@ async def generate_chat_completion(
                 status_code=403,
                 detail="Model not found",
             )
-
-    if ":" not in payload["model"]:
-        payload["model"] = f"{payload['model']}:latest"
 
     url, url_idx = await get_ollama_url(request, payload["model"], url_idx)
     api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(
@@ -1398,8 +1435,11 @@ async def generate_openai_completion(
     form_data: dict,
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
-    db: Session = Depends(get_session),
 ):
+    # NOTE: We intentionally do NOT use Depends(get_session) here.
+    # Database operations (get_model_by_id, AccessGrants.has_access) manage their own short-lived sessions.
+    # This prevents holding a connection during the entire LLM call (30-60+ seconds),
+    # which would exhaust the connection pool under concurrent load.
     metadata = form_data.pop("metadata", None)
 
     try:
@@ -1416,10 +1456,7 @@ async def generate_openai_completion(
         del payload["metadata"]
 
     model_id = form_data.model
-    if ":" not in model_id:
-        model_id = f"{model_id}:latest"
-
-    model_info = Models.get_model_by_id(model_id, db=db)
+    model_info = Models.get_model_by_id(model_id)
     if model_info:
         if model_info.base_model_id:
             payload["model"] = model_info.base_model_id
@@ -1430,13 +1467,17 @@ async def generate_openai_completion(
 
         # Check if user has access to the model
         if user.role == "user":
+            user_group_ids = {
+                group.id for group in Groups.get_groups_by_member_id(user.id)
+            }
             if not (
                 user.id == model_info.user_id
-                or has_access(
-                    user.id,
-                    type="read",
-                    access_control=model_info.access_control,
-                    db=db,
+                or AccessGrants.has_access(
+                    user_id=user.id,
+                    resource_type="model",
+                    resource_id=model_info.id,
+                    permission="read",
+                    user_group_ids=user_group_ids,
                 )
             ):
                 raise HTTPException(
@@ -1449,9 +1490,6 @@ async def generate_openai_completion(
                 status_code=403,
                 detail="Model not found",
             )
-
-    if ":" not in payload["model"]:
-        payload["model"] = f"{payload['model']}:latest"
 
     url, url_idx = await get_ollama_url(request, payload["model"], url_idx)
     api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(
@@ -1481,8 +1519,12 @@ async def generate_openai_chat_completion(
     form_data: dict,
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
-    db: Session = Depends(get_session),
 ):
+    # NOTE: We intentionally do NOT use Depends(get_session) here.
+    # Database operations (get_model_by_id, AccessGrants.has_access) manage their own short-lived sessions.
+    # This prevents holding a connection during the entire LLM call (30-60+ seconds),
+    # which would exhaust the connection pool under concurrent load.
+
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
     metadata = form_data.pop("metadata", None)
@@ -1501,10 +1543,7 @@ async def generate_openai_chat_completion(
         del payload["metadata"]
 
     model_id = completion_form.model
-    if ":" not in model_id:
-        model_id = f"{model_id}:latest"
-
-    model_info = Models.get_model_by_id(model_id, db=db)
+    model_info = Models.get_model_by_id(model_id)
     if model_info:
         if model_info.base_model_id:
             payload["model"] = model_info.base_model_id
@@ -1519,13 +1558,17 @@ async def generate_openai_chat_completion(
 
         # Check if user has access to the model
         if user.role == "user":
+            user_group_ids = {
+                group.id for group in Groups.get_groups_by_member_id(user.id)
+            }
             if not (
                 user.id == model_info.user_id
-                or has_access(
-                    user.id,
-                    type="read",
-                    access_control=model_info.access_control,
-                    db=db,
+                or AccessGrants.has_access(
+                    user_id=user.id,
+                    resource_type="model",
+                    resource_id=model_info.id,
+                    permission="read",
+                    user_group_ids=user_group_ids,
                 )
             ):
                 raise HTTPException(
@@ -1538,9 +1581,6 @@ async def generate_openai_chat_completion(
                 status_code=403,
                 detail="Model not found",
             )
-
-    if ":" not in payload["model"]:
-        payload["model"] = f"{payload['model']}:latest"
 
     url, url_idx = await get_ollama_url(request, payload["model"], url_idx)
     api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(
@@ -1619,15 +1659,32 @@ async def get_openai_models(
 
     if user.role == "user" and not BYPASS_MODEL_ACCESS_CONTROL:
         # Filter models based on user access control
+        model_ids = [model["id"] for model in models]
+        model_infos = {
+            model_info.id: model_info
+            for model_info in Models.get_models_by_ids(model_ids, db=db)
+        }
+        user_group_ids = {
+            group.id for group in Groups.get_groups_by_member_id(user.id, db=db)
+        }
+
+        # Batch-fetch accessible resource IDs in a single query instead of N has_access calls
+        accessible_model_ids = AccessGrants.get_accessible_resource_ids(
+            user_id=user.id,
+            resource_type="model",
+            resource_ids=list(model_infos.keys()),
+            permission="read",
+            user_group_ids=user_group_ids,
+            db=db,
+        )
+
         filtered_models = []
         for model in models:
-            model_info = Models.get_model_by_id(model["id"], db=db)
+            model_info = model_infos.get(model["id"])
             if model_info:
-                if user.id == model_info.user_id or has_access(
-                    user.id,
-                    type="read",
-                    access_control=model_info.access_control,
-                    db=db,
+                if (
+                    user.id == model_info.user_id
+                    or model_info.id in accessible_model_ids
                 ):
                     filtered_models.append(model)
         models = filtered_models
@@ -1712,7 +1769,9 @@ async def download_file_stream(
 
                                 yield f"data: {json.dumps(res)}\n\n"
                             else:
-                                raise "Ollama: Could not create blob, Please try again."
+                                raise RuntimeError(
+                                    "Ollama: Could not create blob, Please try again."
+                                )
 
 
 # url = "https://huggingface.co/TheBloke/stablelm-zephyr-3b-GGUF/resolve/main/stablelm-zephyr-3b.Q2_K.gguf"

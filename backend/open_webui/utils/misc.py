@@ -11,7 +11,6 @@ import json
 import aiohttp
 import mimeparse
 
-
 import collections.abc
 from open_webui.env import CHAT_STREAM_RESPONSE_CHUNK_MAX_BUFFER_SIZE
 
@@ -91,14 +90,22 @@ def get_message_list(messages_map, message_id):
 
     # Reconstruct the chain by following the parentId links
     message_list = []
+    visited_message_ids = set()
 
     while current_message:
-        message_list.insert(
-            0, current_message
-        )  # Insert the message at the beginning of the list
+        message_id = current_message.get("id")
+        if message_id in visited_message_ids:
+            # Cycle detected, break to prevent infinite loop
+            break
+
+        if message_id is not None:
+            visited_message_ids.add(message_id)
+
+        message_list.append(current_message)
         parent_id = current_message.get("parentId")  # Use .get() for safety
         current_message = messages_map.get(parent_id) if parent_id else None
 
+    message_list.reverse()
     return message_list
 
 
@@ -128,11 +135,168 @@ def get_content_from_message(message: dict) -> Optional[str]:
     return None
 
 
+def convert_output_to_messages(output: list, raw: bool = False) -> list[dict]:
+    """
+    Convert OR-aligned output items to OpenAI Chat Completion-format messages.
+
+    This reconstructs the full conversation from the stored Responses API-native
+    output items, including assistant messages with tool_calls arrays and tool
+    role messages.
+
+    Args:
+        output: List of OR-aligned output items (Responses API format).
+        raw: If True, include reasoning blocks (with original tags) and code
+             interpreter blocks for LLM re-processing follow-ups.
+    """
+    if not output or not isinstance(output, list):
+        return []
+
+    messages = []
+    pending_tool_calls = []
+    pending_content = []
+
+    def flush_pending():
+        nonlocal pending_content, pending_tool_calls
+        if pending_content or pending_tool_calls:
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": "\n".join(pending_content) if pending_content else "",
+                    **(
+                        {"tool_calls": pending_tool_calls} if pending_tool_calls else {}
+                    ),
+                }
+            )
+            pending_content = []
+            pending_tool_calls = []
+
+    for item in output:
+        item_type = item.get("type", "")
+
+        if item_type == "message":
+            # Extract text from output_text content parts
+            content_parts = item.get("content", [])
+            text = ""
+            for part in content_parts:
+                if part.get("type") == "output_text":
+                    text += part.get("text", "")
+            if text:
+                pending_content.append(text)
+
+        elif item_type == "function_call":
+            # Collect tool calls to batch into assistant message
+            arguments = item.get("arguments", "{}")
+            # Ensure arguments is always a JSON string
+            if not isinstance(arguments, str):
+                arguments = json.dumps(arguments)
+            pending_tool_calls.append(
+                {
+                    "id": item.get("call_id", ""),
+                    "type": "function",
+                    "function": {
+                        "name": item.get("name", ""),
+                        "arguments": arguments,
+                    },
+                }
+            )
+
+        elif item_type == "function_call_output":
+            # Flush any pending content/tool_calls before adding tool result
+            flush_pending()
+
+            # Extract text from output content parts
+            output_parts = item.get("output", [])
+            content = ""
+            for part in output_parts:
+                if part.get("type") == "input_text":
+                    output_text = part.get("text", "")
+                    content += (
+                        str(output_text)
+                        if not isinstance(output_text, str)
+                        else output_text
+                    )
+
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": item.get("call_id", ""),
+                    "content": content,
+                }
+            )
+
+        elif item_type == "reasoning":
+            if raw:
+                # Include reasoning with original tags for LLM re-processing
+                reasoning_text = ""
+                source_list = item.get("summary", []) or item.get("content", [])
+                for part in source_list:
+                    if part.get("type") == "output_text":
+                        reasoning_text += part.get("text", "")
+                    elif "text" in part:
+                        reasoning_text += part.get("text", "")
+
+                if reasoning_text:
+                    start_tag = item.get("start_tag", "<think>")
+                    end_tag = item.get("end_tag", "</think>")
+                    pending_content.append(f"{start_tag}{reasoning_text}{end_tag}")
+            # else: skip reasoning blocks for normal LLM messages
+
+        elif item_type == "open_webui:code_interpreter":
+            # Always include code interpreter content so the LLM knows
+            # the code was already executed and doesn't retry.
+            code = item.get("code", "")
+            code_output = item.get("output", "")
+
+            if code:
+                pending_content.append(
+                    f"<code_interpreter>\n{code}\n</code_interpreter>"
+                )
+
+            if code_output:
+                if isinstance(code_output, dict):
+                    stdout = code_output.get("stdout", "")
+                    result = code_output.get("result", "")
+                    output_text = stdout or result
+                else:
+                    output_text = str(code_output)
+                if output_text:
+                    pending_content.append(
+                        f"<code_interpreter_output>\n{output_text}\n</code_interpreter_output>"
+                    )
+
+        elif item_type.startswith("open_webui:"):
+            # Skip other extension types
+            pass
+
+    # Flush remaining content/tool_calls
+    flush_pending()
+
+    return messages
+
+
 def get_last_user_message(messages: list[dict]) -> Optional[str]:
     message = get_last_user_message_item(messages)
     if message is None:
         return None
     return get_content_from_message(message)
+
+
+def set_last_user_message_content(content: str, messages: list[dict]) -> list[dict]:
+    """
+    Replace the text content of the last user message in-place.
+    Handles both plain-string and list-of-parts content formats.
+    """
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            if isinstance(message.get("content"), list):
+                for item in message["content"]:
+                    if item.get("type") == "text":
+                        item["text"] = content
+                        break
+            else:
+                message["content"] = content
+            break
+    return messages
 
 
 def get_last_assistant_message_item(messages: list[dict]) -> Optional[dict]:
@@ -313,7 +477,7 @@ def openai_chat_completion_message_template(
             **({"tool_calls": tool_calls} if tool_calls else {}),
         }
 
-    template["choices"][0]["finish_reason"] = "stop"
+    template["choices"][0]["finish_reason"] = "tool_calls" if tool_calls else "stop"
 
     if usage:
         template["usage"] = usage
@@ -399,6 +563,53 @@ def sanitize_data_for_db(obj):
     elif isinstance(obj, list):
         return [sanitize_data_for_db(v) for v in obj]
     return obj
+
+
+def sanitize_metadata(metadata: dict) -> dict:
+    """
+    Return a JSON-safe copy of a metadata dict for database storage.
+
+    The middleware metadata accumulates non-serializable Python objects
+    (e.g. callable tool functions, MCP client instances) that cause
+    PostgreSQL JSON inserts to fail.  This helper strips those out while
+    preserving the primitive data needed for file-to-chat linking.
+    """
+    if not isinstance(metadata, dict):
+        return metadata
+
+    def _sanitize(obj):
+        if isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        if isinstance(obj, dict):
+            return {
+                k: _sanitize(v)
+                for k, v in obj.items()
+                if not callable(v) and _is_serializable(v)
+            }
+        if isinstance(obj, list):
+            return [
+                _sanitize(v) for v in obj if not callable(v) and _is_serializable(v)
+            ]
+        if callable(obj):
+            return None
+        # Last resort: try to see if it's serializable
+        try:
+            json.dumps(obj)
+            return obj
+        except (TypeError, ValueError):
+            return None
+
+    def _is_serializable(obj):
+        """Quick check whether a value can survive JSON serialization."""
+        if isinstance(obj, (str, int, float, bool, type(None), dict, list)):
+            return True
+        try:
+            json.dumps(obj)
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    return _sanitize(metadata)
 
 
 def extract_folders_after_data_docs(path):
@@ -650,46 +861,29 @@ def extract_urls(text: str) -> list[str]:
     return url_pattern.findall(text)
 
 
-def stream_chunks_handler(
-    user: "UserModel", model_id: str, form_data: dict, stream: aiohttp.StreamReader
+async def cleanup_response(
+    response: Optional[aiohttp.ClientResponse],
+    session: Optional[aiohttp.ClientSession],
+):
+    if response:
+        response.close()
+    if session:
+        await session.close()
+
+
+async def stream_wrapper(
+    user, model_id, form_data, response, session, content_handler=None
 ):
     """
-    Handle stream response chunks, supporting large data chunks that exceed the original 16kb limit.
-    When a single line exceeds max_buffer_size, returns an empty JSON string {} and skips subsequent data
-    until encountering normally sized data.
-
-    :param user: The user making the request.
-    :param model_id: The ID of the model being used.
-    :param form_data: The form data associated with the request.
-    :param stream: The stream reader to handle.
-    :return: An async generator that yields the stream data.
+    Wrap a stream to ensure cleanup happens even if streaming is interrupted.
+    This is more reliable than BackgroundTask which may not run if client disconnects.
     """
-
     from open_webui.utils.credit.usage import CreditDeduct
 
-    max_buffer_size = CHAT_STREAM_RESPONSE_CHUNK_MAX_BUFFER_SIZE
-    if max_buffer_size is None or max_buffer_size <= 0:
-
-        async def consumer_content(stream: aiohttp.StreamReader):
-            with CreditDeduct(
-                user=user,
-                model_id=model_id,
-                body=form_data,
-                is_stream=True,
-            ) as credit_deduct:
-                # change to avoid multi \n\n cause message lose
-                async for chunk in stream:
-                    credit_deduct.run(response=chunk)
-                    yield chunk
-
-                yield credit_deduct.usage_message
-
-        return consumer_content(stream)
-
-    async def yield_safe_stream_chunks():
-        buffer = b""
-        skip_mode = False
-
+    try:
+        stream = (
+            content_handler(response.content) if content_handler else response.content
+        )
         with CreditDeduct(
             user=user,
             model_id=model_id,
@@ -697,58 +891,79 @@ def stream_chunks_handler(
             is_stream=True,
         ) as credit_deduct:
             # change to avoid multi \n\n cause message lose
-            async for data in stream:
-
-                if not data:
-                    continue
-
-                credit_deduct.run(response=data)
-
-                # In skip_mode, if buffer already exceeds the limit, clear it (it's part of an oversized line)
-                if skip_mode and len(buffer) > max_buffer_size:
-                    buffer = b""
-
-                lines = (buffer + data).split(b"\n")
-
-                # Process complete lines (except the last possibly incomplete fragment)
-                for i in range(len(lines) - 1):
-                    line = lines[i]
-
-                    if skip_mode:
-                        # Skip mode: check if current line is small enough to exit skip mode
-                        if len(line) <= max_buffer_size:
-                            skip_mode = False
-                            yield line
-                        else:
-                            yield b"data: {}"
-                            yield b"\n"
-                    else:
-                        # Normal mode: check if line exceeds limit
-                        if len(line) > max_buffer_size:
-                            skip_mode = True
-                            yield b"data: {}"
-                            yield b"\n"
-                            log.info(f"Skip mode triggered, line size: {len(line)}")
-                        else:
-                            yield line
-                            yield b"\n"
-
-                # Save the last incomplete fragment
-                buffer = lines[-1]
-
-                # Check if buffer exceeds limit
-                if not skip_mode and len(buffer) > max_buffer_size:
-                    skip_mode = True
-                    log.info(f"Skip mode triggered, buffer size: {len(buffer)}")
-                    # Clear oversized buffer to prevent unlimited growth
-                    buffer = b""
-
-            # Process remaining buffer data
-            if buffer and not skip_mode:
-                credit_deduct.run(response=buffer)
-                yield buffer
-                yield b"\n"
+            async for chunk in stream:
+                credit_deduct.run(response=chunk)
+                yield chunk
 
             yield credit_deduct.usage_message
+    finally:
+        await cleanup_response(response, session)
+
+
+def stream_chunks_handler(stream: aiohttp.StreamReader):
+    """
+    Handle stream response chunks, supporting large data chunks that exceed the original 16kb limit.
+    When a single line exceeds max_buffer_size, returns an empty JSON string {} and skips subsequent data
+    until encountering normally sized data.
+
+    :param stream: The stream reader to handle.
+    :return: An async generator that yields the stream data.
+    """
+
+    max_buffer_size = CHAT_STREAM_RESPONSE_CHUNK_MAX_BUFFER_SIZE
+    if max_buffer_size is None or max_buffer_size <= 0:
+        return stream
+
+    async def yield_safe_stream_chunks():
+        buffer = b""
+        skip_mode = False
+
+        async for data, _ in stream.iter_chunks():
+            if not data:
+                continue
+
+            # In skip_mode, if buffer already exceeds the limit, clear it (it's part of an oversized line)
+            if skip_mode and len(buffer) > max_buffer_size:
+                buffer = b""
+
+            lines = (buffer + data).split(b"\n")
+
+            # Process complete lines (except the last possibly incomplete fragment)
+            for i in range(len(lines) - 1):
+                line = lines[i]
+
+                if skip_mode:
+                    # Skip mode: check if current line is small enough to exit skip mode
+                    if len(line) <= max_buffer_size:
+                        skip_mode = False
+                        yield line
+                    else:
+                        yield b"data: {}"
+                        yield b"\n"
+                else:
+                    # Normal mode: check if line exceeds limit
+                    if len(line) > max_buffer_size:
+                        skip_mode = True
+                        yield b"data: {}"
+                        yield b"\n"
+                        log.info(f"Skip mode triggered, line size: {len(line)}")
+                    else:
+                        yield line
+                        yield b"\n"
+
+            # Save the last incomplete fragment
+            buffer = lines[-1]
+
+            # Check if buffer exceeds limit
+            if not skip_mode and len(buffer) > max_buffer_size:
+                skip_mode = True
+                log.info(f"Skip mode triggered, buffer size: {len(buffer)}")
+                # Clear oversized buffer to prevent unlimited growth
+                buffer = b""
+
+        # Process remaining buffer data
+        if buffer and not skip_mode:
+            yield buffer
+            yield b"\n"
 
     return yield_safe_stream_chunks()

@@ -39,6 +39,7 @@
 	export let help = false;
 
 	export let className = 'max-w-[240px]';
+	export let align = 'end';
 
 	export let showActiveUsers = true;
 
@@ -88,7 +89,7 @@
 			class="w-full {className}  rounded-2xl px-1 py-1  border border-gray-100  dark:border-gray-800 z-50 bg-white dark:bg-gray-850 dark:text-white shadow-lg text-sm"
 			sideOffset={4}
 			side="top"
-			align="end"
+			{align}
 			transition={(e) => fade(e, { duration: 100 })}
 		>
 			{#if profile}
@@ -110,9 +111,6 @@
 							{#if $user?.is_active ?? true}
 								<div>
 									<span class="relative flex size-2">
-										<span
-											class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-										/>
 										<span class="relative inline-flex rounded-full size-2 bg-green-500" />
 									</span>
 								</div>
@@ -204,7 +202,7 @@
 			{/if}
 
 			<DropdownMenu.Item
-				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer"
+				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer select-none"
 				on:click={async () => {
 					show = false;
 
@@ -223,7 +221,7 @@
 			</DropdownMenu.Item>
 
 			<DropdownMenu.Item
-				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer"
+				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer select-none"
 				on:click={async () => {
 					show = false;
 
@@ -246,7 +244,8 @@
 				<DropdownMenu.Item
 					as="a"
 					href="/playground"
-					class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition select-none"
+					draggable="false"
+					class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer select-none"
 					on:click={async () => {
 						show = false;
 						if ($mobile) {
@@ -263,7 +262,8 @@
 				<DropdownMenu.Item
 					as="a"
 					href="/admin"
-					class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition select-none"
+					draggable="false"
+					class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer select-none"
 					on:click={async () => {
 						show = false;
 						if ($mobile) {
@@ -308,15 +308,17 @@
 						}
 					}}
 				>
-					<Keyboard className="size-5" />
-					<div class="flex items-center">{$i18n.t('Keyboard shortcuts')}</div>
+					<div class=" self-center mr-3">
+						<Keyboard className="size-5" />
+					</div>
+					<div class=" self-center truncate">{$i18n.t('Keyboard shortcuts')}</div>
 				</DropdownMenu.Item>
 			{/if}
 
 			<hr class=" border-gray-50/30 dark:border-gray-800/30 my-1 p-0" />
 
 			<DropdownMenu.Item
-				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+				class="flex rounded-xl py-1.5 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition cursor-pointer select-none"
 				on:click={async () => {
 					const res = await userSignOut();
 					user.set(null);
@@ -351,9 +353,6 @@
 						>
 							<div class=" flex items-center">
 								<span class="relative flex size-2">
-									<span
-										class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-									/>
 									<span class="relative inline-flex rounded-full size-2 bg-green-500" />
 								</span>
 							</div>

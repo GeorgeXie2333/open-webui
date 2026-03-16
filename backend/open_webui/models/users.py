@@ -1,9 +1,8 @@
 import time
 from typing import Optional
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 from open_webui.internal.db import Base, JSONField, get_db, get_db_context
-
 
 from open_webui.env import DATABASE_USER_ACTIVE_STATUS_UPDATE_INTERVAL
 
@@ -12,9 +11,9 @@ from open_webui.models.groups import Groups, GroupMember
 from open_webui.models.channels import ChannelMember
 
 from open_webui.utils.misc import throttle
+from open_webui.utils.validate import validate_profile_image_url
 
-
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from sqlalchemy import (
     BigInteger,
     JSON,
@@ -27,7 +26,7 @@ from sqlalchemy import (
     select,
     cast,
 )
-from sqlalchemy import or_, case
+from sqlalchemy import or_, case, func
 from sqlalchemy.dialects.postgresql import JSONB
 
 import datetime
@@ -70,6 +69,7 @@ class User(Base):
     settings = Column(JSON, nullable=True)
 
     oauth = Column(JSON, nullable=True)
+    scim = Column(JSON, nullable=True)
 
     last_active_at = Column(BigInteger)
     updated_at = Column(BigInteger)
@@ -85,7 +85,7 @@ class UserModel(BaseModel):
 
     name: str
 
-    profile_image_url: str
+    profile_image_url: Optional[str] = None
     profile_banner_image_url: Optional[str] = None
 
     bio: Optional[str] = None
@@ -102,12 +102,19 @@ class UserModel(BaseModel):
     settings: Optional[UserSettings] = None
 
     oauth: Optional[dict] = None
+    scim: Optional[dict] = None
 
     last_active_at: int  # timestamp in epoch
     updated_at: int  # timestamp in epoch
     created_at: int  # timestamp in epoch
 
     model_config = ConfigDict(from_attributes=True, extra="allow")
+
+    @model_validator(mode="after")
+    def set_profile_image_url(self):
+        if not self.profile_image_url:
+            self.profile_image_url = f"/api/v1/users/{self.id}/profile/image"
+        return self
 
 
 class UserStatusModel(UserModel):
@@ -154,6 +161,11 @@ class UpdateProfileForm(BaseModel):
     gender: Optional[str] = None
     date_of_birth: Optional[datetime.date] = None
 
+    @field_validator("profile_image_url")
+    @classmethod
+    def check_profile_image_url(cls, v: str) -> str:
+        return validate_profile_image_url(v)
+
 
 class UserGroupIdsModel(UserModel):
     group_ids: list[str] = []
@@ -184,6 +196,9 @@ class UserInfoResponse(UserStatus):
     name: str
     email: str
     role: str
+    bio: Optional[str] = None
+    groups: Optional[list] = []
+    is_active: bool = False
 
 
 class UserIdNameResponse(BaseModel):
@@ -235,6 +250,11 @@ class UserUpdateForm(BaseModel):
     password: Optional[str] = None
     credit: Optional[float] = None
 
+    @field_validator("profile_image_url")
+    @classmethod
+    def check_profile_image_url(cls, v: str) -> str:
+        return validate_profile_image_url(v)
+
 
 class UserCreditUpdateForm(BaseModel):
     amount: Optional[float] = None
@@ -249,6 +269,7 @@ class UsersTable:
         email: str,
         profile_image_url: str = "/user.png",
         role: str = "pending",
+        username: Optional[str] = None,
         oauth: Optional[dict] = None,
         db: Optional[Session] = None,
     ) -> Optional[UserModel]:
@@ -263,6 +284,7 @@ class UsersTable:
                     "last_active_at": int(time.time()),
                     "created_at": int(time.time()),
                     "updated_at": int(time.time()),
+                    "username": username,
                     "oauth": oauth,
                 }
             )
@@ -305,8 +327,12 @@ class UsersTable:
     ) -> Optional[UserModel]:
         try:
             with get_db_context(db) as db:
-                user = db.query(User).filter_by(email=email).first()
-                return UserModel.model_validate(user)
+                user = (
+                    db.query(User)
+                    .filter(func.lower(User.email) == email.lower())
+                    .first()
+                )
+                return UserModel.model_validate(user) if user else None
         except Exception:
             return None
 
@@ -331,6 +357,29 @@ class UsersTable:
             # You may want to log the exception here
             return None
 
+    def get_user_by_scim_external_id(
+        self, provider: str, external_id: str, db: Optional[Session] = None
+    ) -> Optional[UserModel]:
+        try:
+            with get_db_context(db) as db:  # type: Session
+                dialect_name = db.bind.dialect.name
+
+                query = db.query(User)
+                if dialect_name == "sqlite":
+                    query = query.filter(
+                        User.scim.contains({provider: {"external_id": external_id}})
+                    )
+                elif dialect_name == "postgresql":
+                    query = query.filter(
+                        User.scim[provider].cast(JSONB)["external_id"].astext
+                        == external_id
+                    )
+
+                user = query.first()
+                return UserModel.model_validate(user) if user else None
+        except Exception:
+            return None
+
     def get_users(
         self,
         filter: Optional[dict] = None,
@@ -340,7 +389,7 @@ class UsersTable:
     ) -> dict:
         with get_db_context(db) as db:
             # Join GroupMember so we can order by group_id when requested
-            query = db.query(User)
+            query = db.query(User).options(defer(User.profile_image_url))
 
             if filter:
                 query_key = filter.get("query")
@@ -475,6 +524,7 @@ class UsersTable:
         with get_db_context(db) as db:
             users = (
                 db.query(User)
+                .options(defer(User.profile_image_url))
                 .join(GroupMember, User.id == GroupMember.user_id)
                 .filter(GroupMember.group_id == group_id)
                 .all()
@@ -485,7 +535,12 @@ class UsersTable:
         self, user_ids: list[str], db: Optional[Session] = None
     ) -> list[UserStatusModel]:
         with get_db_context(db) as db:
-            users = db.query(User).filter(User.id.in_(user_ids)).all()
+            users = (
+                db.query(User)
+                .options(defer(User.profile_image_url))
+                .filter(User.id.in_(user_ids))
+                .all()
+            )
             return [UserModel.model_validate(user) for user in users]
 
     def get_num_users(self, db: Optional[Session] = None) -> Optional[int]:
@@ -536,9 +591,12 @@ class UsersTable:
     ) -> Optional[UserModel]:
         try:
             with get_db_context(db) as db:
-                db.query(User).filter_by(id=id).update({"role": role})
-                db.commit()
                 user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                user.role = role
+                db.commit()
+                db.refresh(user)
                 return UserModel.model_validate(user)
         except Exception:
             return None
@@ -548,12 +606,13 @@ class UsersTable:
     ) -> Optional[UserModel]:
         try:
             with get_db_context(db) as db:
-                db.query(User).filter_by(id=id).update(
-                    {**form_data.model_dump(exclude_none=True)}
-                )
-                db.commit()
-
                 user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                for key, value in form_data.model_dump(exclude_none=True).items():
+                    setattr(user, key, value)
+                db.commit()
+                db.refresh(user)
                 return UserModel.model_validate(user)
         except Exception:
             return None
@@ -563,12 +622,12 @@ class UsersTable:
     ) -> Optional[UserModel]:
         try:
             with get_db_context(db) as db:
-                db.query(User).filter_by(id=id).update(
-                    {"profile_image_url": profile_image_url}
-                )
-                db.commit()
-
                 user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                user.profile_image_url = profile_image_url
+                db.commit()
+                db.refresh(user)
                 return UserModel.model_validate(user)
         except Exception:
             return None
@@ -579,12 +638,12 @@ class UsersTable:
     ) -> Optional[UserModel]:
         try:
             with get_db_context(db) as db:
-                db.query(User).filter_by(id=id).update(
-                    {"last_active_at": int(time.time())}
-                )
-                db.commit()
-
                 user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                user.last_active_at = int(time.time())
+                db.commit()
+                db.refresh(user)
                 return UserModel.model_validate(user)
         except Exception:
             return None
@@ -621,17 +680,51 @@ class UsersTable:
         except Exception:
             return None
 
+    def update_user_scim_by_id(
+        self,
+        id: str,
+        provider: str,
+        external_id: str,
+        db: Optional[Session] = None,
+    ) -> Optional[UserModel]:
+        """
+        Update or insert a SCIM provider/external_id pair into the user's scim JSON field.
+        Example resulting structure:
+            {
+                "microsoft": { "external_id": "abc" },
+                "okta": { "external_id": "def" }
+            }
+        """
+        try:
+            with get_db_context(db) as db:
+                user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+
+                scim = user.scim or {}
+                scim[provider] = {"external_id": external_id}
+
+                db.query(User).filter_by(id=id).update({"scim": scim})
+                db.commit()
+
+                return UserModel.model_validate(user)
+
+        except Exception:
+            return None
+
     def update_user_by_id(
         self, id: str, updated: dict, db: Optional[Session] = None
     ) -> Optional[UserModel]:
         try:
             with get_db_context(db) as db:
-                db.query(User).filter_by(id=id).update(updated)
-                db.commit()
-
                 user = db.query(User).filter_by(id=id).first()
+                if not user:
+                    return None
+                for key, value in updated.items():
+                    setattr(user, key, value)
+                db.commit()
+                db.refresh(user)
                 return UserModel.model_validate(user)
-                # return UserModel(**user.dict())
         except Exception as e:
             print(e)
             return None
@@ -745,6 +838,14 @@ class UsersTable:
                 db.query(User).filter(User.last_active_at >= three_minutes_ago).count()
             )
             return count
+
+    @staticmethod
+    def is_active(user: UserModel) -> bool:
+        """Compute active status from an already-loaded UserModel (no DB hit)."""
+        if user.last_active_at:
+            three_minutes_ago = int(time.time()) - 180
+            return user.last_active_at >= three_minutes_ago
+        return False
 
     def is_user_active(self, user_id: str, db: Optional[Session] = None) -> bool:
         with get_db_context(db) as db:

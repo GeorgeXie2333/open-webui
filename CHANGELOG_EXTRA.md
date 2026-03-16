@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.10.1] - 2026.03.09
+
+### Changed
+
+- 合并官方 0.8.10 改动
+
+## [0.8.9.1] - 2026.03.08
+
+### Changed
+
+- 合并官方 0.8.9 改动
+
+## [0.8.8.1] - 2026.03.03
+
+### Changed
+
+- 合并官方 0.8.8 改动
+
+## [0.8.7.1] - 2026.03.02
+
+### Changed
+
+- 合并官方 0.8.7 改动
+
+## [0.8.5.1] - 2026.02.24
+
+### Changed
+
+- 合并官方 0.8.5 改动
+
+## [0.8.3.1] - 2026.02.19
+
+### Changed
+
+- 合并官方 0.8.3 改动
+
+## [0.8.1.1] - 2026.02.14
+
+### Changed
+
+- 合并官方 0.8.1 改动
+- 移除 Responses 接口
+
+## [0.8.0.2] - 2026.02.13
+
+### Fixed
+
+- 修复模型价格设置不能为小数的问题
+
+## [0.8.0.1] - 2026.02.13
+
+### Changed
+
+- 合并官方 0.8.0 改动
+
 ## [0.7.2.5] - 2026.01.28
 
 ### Changed
