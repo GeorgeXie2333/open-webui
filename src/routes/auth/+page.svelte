@@ -1,52 +1,52 @@
 <script lang="ts">
-    import DOMPurify from 'dompurify';
-    import { marked } from 'marked';
-    import { toast } from 'svelte-sonner';
-    import { onMount, getContext, tick } from 'svelte';
-    import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
-    import { getBackendConfig } from '$lib/apis';
-    import {
+	import DOMPurify from 'dompurify';
+	import { marked } from 'marked';
+	import { toast } from 'svelte-sonner';
+	import { onMount, getContext, tick } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { getBackendConfig } from '$lib/apis';
+	import {
 		ldapUserSignIn,
 		getSessionUser,
 		userSignIn,
 		userSignUp,
 		updateUserTimezone
 	} from '$lib/apis/auths';
-    import { WEBUI_BASE_URL } from '$lib/constants';
-    import { WEBUI_NAME, config, user, socket } from '$lib/stores';
-    import { generateInitialsImage, getUserTimezone } from '$lib/utils';
-    import Spinner from '$lib/components/common/Spinner.svelte';
-    import OnBoarding from '$lib/components/OnBoarding.svelte';
-    import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
-    import ReCaptcha from '$lib/components/auth/ReCaptcha.svelte';
+	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { WEBUI_NAME, config, user, socket } from '$lib/stores';
+	import { generateInitialsImage, getUserTimezone } from '$lib/utils';
+	import Spinner from '$lib/components/common/Spinner.svelte';
+	import OnBoarding from '$lib/components/OnBoarding.svelte';
+	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
+	import ReCaptcha from '$lib/components/auth/ReCaptcha.svelte';
 
-    const i18n = getContext('i18n');
+	const i18n = getContext('i18n');
 
-    let loaded = false;
-    let mode = $config?.features?.enable_ldap ? 'ldap' : 'signin';
-    let form: string | null = null;
+	let loaded = false;
+	let mode = $config?.features?.enable_ldap ? 'ldap' : 'signin';
+	let form: string | null = null;
 
-    let name = '';
-    let email = '';
-    let password = '';
-    let confirmPassword = '';
-    let ldapUsername = '';
+	let name = '';
+	let email = '';
+	let password = '';
+	let confirmPassword = '';
+	let ldapUsername = '';
 
-    // reCAPTCHA
-    let recaptchaToken = '';
-    let recaptchaComponent: any;
+	// reCAPTCHA
+	let recaptchaToken = '';
+	let recaptchaComponent: any;
 
-    const setSessionUser = async (sessionUser: any, redirectPath: string | null = null) => {
-        if (sessionUser) {
-            console.log(sessionUser);
-            toast.success($i18n.t("You're now logged in."));
-            if (sessionUser.token) {
-                localStorage.token = sessionUser.token;
-            }
-            $socket.emit('user-join', { auth: { token: sessionUser.token } });
-            await user.set(sessionUser);
-            await config.set(await getBackendConfig());
+	const setSessionUser = async (sessionUser: any, redirectPath: string | null = null) => {
+		if (sessionUser) {
+			console.log(sessionUser);
+			toast.success($i18n.t("You're now logged in."));
+			if (sessionUser.token) {
+				localStorage.token = sessionUser.token;
+			}
+			$socket.emit('user-join', { auth: { token: sessionUser.token } });
+			await user.set(sessionUser);
+			await config.set(await getBackendConfig());
 
 			// Update user timezone
 			const timezone = getUserTimezone();
@@ -54,374 +54,396 @@
 				updateUserTimezone(sessionUser.token, timezone);
 			}
 
-            if (!redirectPath) {
-                redirectPath = $page.url.searchParams.get('redirect') || '/';
-            }
-            goto(redirectPath);
-            localStorage.removeItem('redirectPath');
-        }
-    };
+			if (!redirectPath) {
+				redirectPath = $page.url.searchParams.get('redirect') || '/';
+			}
+			goto(redirectPath);
+			localStorage.removeItem('redirectPath');
+		}
+	};
 
-    const signInHandler = async () => {
-        const sessionUser = await userSignIn(email, password).catch((error) => {
-            toast.error(`${error}`);
-            return null;
-        });
-        await setSessionUser(sessionUser);
-    };
+	const signInHandler = async () => {
+		const sessionUser = await userSignIn(email, password).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+		await setSessionUser(sessionUser);
+	};
 
-    const signUpHandler = async () => {
-        if ($config?.ENABLE_RECAPTCHA && mode === 'signup' && !recaptchaToken) {
-            toast.error('请完成reCAPTCHA验证');
-            return;
-        }
+	const signUpHandler = async () => {
+		if ($config?.ENABLE_RECAPTCHA && mode === 'signup' && !recaptchaToken) {
+			toast.error('请完成reCAPTCHA验证');
+			return;
+		}
 
-        if ($config?.features?.enable_signup_password_confirmation) {
-            if (password !== confirmPassword) {
-                toast.error($i18n.t('Passwords do not match.'));
-                return;
-            }
-        }
+		if ($config?.features?.enable_signup_password_confirmation) {
+			if (password !== confirmPassword) {
+				toast.error($i18n.t('Passwords do not match.'));
+				return;
+			}
+		}
 
-        const sessionUser = await userSignUp(
-            name,
-            email,
-            password,
-            generateInitialsImage(name),
-            recaptchaToken
-        ).catch((error) => {
-            toast.error(`${error}`);
-            if (recaptchaComponent) {
-                recaptchaComponent.reset();
-                recaptchaToken = '';
-            }
-            return null;
-        });
-        await setSessionUser(sessionUser);
-    };
+		const sessionUser = await userSignUp(
+			name,
+			email,
+			password,
+			generateInitialsImage(name),
+			recaptchaToken
+		).catch((error) => {
+			toast.error(`${error}`);
+			if (recaptchaComponent) {
+				recaptchaComponent.reset();
+				recaptchaToken = '';
+			}
+			return null;
+		});
+		await setSessionUser(sessionUser);
+	};
 
-    const ldapSignInHandler = async () => {
-        const sessionUser = await ldapUserSignIn(ldapUsername, password).catch((error) => {
-            toast.error(`${error}`);
-            return null;
-        });
-        await setSessionUser(sessionUser);
-    };
+	const ldapSignInHandler = async () => {
+		const sessionUser = await ldapUserSignIn(ldapUsername, password).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+		await setSessionUser(sessionUser);
+	};
 
-    const submitHandler = async () => {
-        if (mode === 'ldap') {
-            await ldapSignInHandler();
-        } else if (mode === 'signin') {
-            await signInHandler();
-        } else {
-            await signUpHandler();
-        }
-    };
+	const submitHandler = async () => {
+		if (mode === 'ldap') {
+			await ldapSignInHandler();
+		} else if (mode === 'signin') {
+			await signInHandler();
+		} else {
+			await signUpHandler();
+		}
+	};
 
-    const oauthCallbackHandler = async () => {
-        // 使用更安全易读的 cookie 读取函数，避免正则转义问题
-        function getCookie(name: string) {
-            const cookies = document.cookie ? document.cookie.split('; ') : [];
-            for (const c of cookies) {
-                const [k, ...v] = c.split('=');
-                if (k === name) {
-                    return decodeURIComponent(v.join('='));
-                }
-            }
-            return null;
-        }
+	const oauthCallbackHandler = async () => {
+		// 使用更安全易读的 cookie 读取函数，避免正则转义问题
+		function getCookie(name: string) {
+			const cookies = document.cookie ? document.cookie.split('; ') : [];
+			for (const c of cookies) {
+				const [k, ...v] = c.split('=');
+				if (k === name) {
+					return decodeURIComponent(v.join('='));
+				}
+			}
+			return null;
+		}
 
-        const token = getCookie('token');
-        if (!token) return;
+		const token = getCookie('token');
+		if (!token) return;
 
-        const sessionUser = await getSessionUser(token).catch((error) => {
-            toast.error(`${error}`);
-            return null;
-        });
-        if (!sessionUser) return;
+		const sessionUser = await getSessionUser(token).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+		if (!sessionUser) return;
 
-        localStorage.token = token;
-        await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
-    };
+		localStorage.token = token;
+		await setSessionUser(sessionUser, localStorage.getItem('redirectPath') || null);
+	};
 
-    // reCAPTCHA handlers
-    const handleRecaptchaVerified = (event: CustomEvent<{ token: string }>) => {
-        recaptchaToken = event.detail.token;
-    };
-    const handleRecaptchaExpired = () => {
-        recaptchaToken = '';
-        toast.warning('reCAPTCHA已过期，请重新验证');
-    };
-    const handleRecaptchaError = () => {
-        recaptchaToken = '';
-        toast.error('reCAPTCHA验证出错，请刷新页面重试');
-    };
+	// reCAPTCHA handlers
+	const handleRecaptchaVerified = (event: CustomEvent<{ token: string }>) => {
+		recaptchaToken = event.detail.token;
+	};
+	const handleRecaptchaExpired = () => {
+		recaptchaToken = '';
+		toast.warning('reCAPTCHA已过期，请重新验证');
+	};
+	const handleRecaptchaError = () => {
+		recaptchaToken = '';
+		toast.error('reCAPTCHA验证出错，请刷新页面重试');
+	};
 
-    let onboarding = false;
+	let onboarding = false;
 
-    async function setLogoImage() {
-        await tick();
-        const logo = document.getElementById('logo') as HTMLImageElement | null;
-        if (logo) {
-            const isDarkMode = document.documentElement.classList.contains('dark');
-            if (isDarkMode) {
-                const darkImage = new Image();
-                darkImage.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
-                darkImage.onload = () => {
-                    logo.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
-                    logo.style.filter = '';
-                };
-                darkImage.onerror = () => {
-                    logo.style.filter = 'invert(1)';
-                };
-            }
-        }
-    }
+	async function setLogoImage() {
+		await tick();
+		const logo = document.getElementById('logo') as HTMLImageElement | null;
+		if (logo) {
+			const isDarkMode = document.documentElement.classList.contains('dark');
+			if (isDarkMode) {
+				const darkImage = new Image();
+				darkImage.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
+				darkImage.onload = () => {
+					logo.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
+					logo.style.filter = '';
+				};
+				darkImage.onerror = () => {
+					logo.style.filter = 'invert(1)';
+				};
+			}
+		}
+	}
 
-    onMount(async () => {
-        const redirectPath = $page.url.searchParams.get('redirect');
-        if ($user !== undefined) {
-            goto(redirectPath || '/');
-        } else {
-            if (redirectPath) {
-                localStorage.setItem('redirectPath', redirectPath);
-            }
-        }
+	onMount(async () => {
+		const redirectPath = $page.url.searchParams.get('redirect');
+		if ($user !== undefined) {
+			goto(redirectPath || '/');
+		} else {
+			if (redirectPath) {
+				localStorage.setItem('redirectPath', redirectPath);
+			}
+		}
 
-        const error = $page.url.searchParams.get('error');
-        if (error) {
-            toast.error(error);
-        }
+		const error = $page.url.searchParams.get('error');
+		if (error) {
+			toast.error(error);
+		}
 
-        await oauthCallbackHandler();
-        form = $page.url.searchParams.get('form');
-        loaded = true;
+		await oauthCallbackHandler();
+		form = $page.url.searchParams.get('form');
+		loaded = true;
 
-        setLogoImage();
+		setLogoImage();
 
-        if (($config?.features?.auth_trusted_header ?? false) || $config?.features?.auth === false) {
-            await signInHandler();
-        } else {
-            onboarding = $config?.onboarding ?? false;
-        }
-    });
+		if (($config?.features?.auth_trusted_header ?? false) || $config?.features?.auth === false) {
+			await signInHandler();
+		} else {
+			onboarding = $config?.onboarding ?? false;
+		}
+	});
 </script>
 
 <svelte:head>
-    <title>{$WEBUI_NAME}</title>
+	<title>{$WEBUI_NAME}</title>
 </svelte:head>
 
 <OnBoarding
-    bind:show={onboarding}
-    getStartedHandler={() => {
-        onboarding = false;
-        mode = $config?.features?.enable_ldap ? 'ldap' : 'signup';
-    }}
+	bind:show={onboarding}
+	getStartedHandler={() => {
+		onboarding = false;
+		mode = $config?.features?.enable_ldap ? 'ldap' : 'signup';
+	}}
 />
 
 <div class="w-full h-screen max-h-[100dvh] text-white relative auth-page">
-    <div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
-    {#if loaded}
-        <div class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white">
-            <div class="w-full sm:max-w-md px-10 min-h-screen flex flex-col text-center">
-                {#if ($config?.features?.auth_trusted_header ?? false) || $config?.features?.auth === false}
-                    <div class="my-auto pb-10 w-full">
-                        <div class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-3xl p-8 border border-gray-200/30 dark:border-gray-700/30 shadow-2xl shadow-black/10 dark:shadow-black/50">
-                            <div class="flex items-center justify-center gap-3 text-xl sm:text-2xl text-center font-semibold dark:text-gray-200">
-                                <div>{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}</div>
-                                <div><Spinner className="size-5" /></div>
-                            </div>
-                        </div>
-                    </div>
-                {:else}
-                    <div class="my-auto pb-10 w-full dark:text-gray-100">
-                        <div class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-3xl p-8 border border-gray-200/30 dark:border-gray-700/30 shadow-2xl shadow-black/10 dark:shadow-black/50">
-                            {#if $config?.metadata?.auth_logo_position === 'center'}
-                                <div class="flex justify-center mb-6">
-                                    <img
-                                        id="logo"
-                                        crossorigin="anonymous"
-                                        src="{WEBUI_BASE_URL}/static/favicon.png"
-                                        class="size-24 rounded-full"
-                                        alt="{$WEBUI_NAME} logo"
-                                    />
-                                </div>
-                            {/if}
+	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
+	{#if loaded}
+		<div
+			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white"
+		>
+			<div class="w-full sm:max-w-md px-10 min-h-screen flex flex-col text-center">
+				{#if ($config?.features?.auth_trusted_header ?? false) || $config?.features?.auth === false}
+					<div class="my-auto pb-10 w-full">
+						<div
+							class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-3xl p-8 border border-gray-200/30 dark:border-gray-700/30 shadow-2xl shadow-black/10 dark:shadow-black/50"
+						>
+							<div
+								class="flex items-center justify-center gap-3 text-xl sm:text-2xl text-center font-semibold dark:text-gray-200"
+							>
+								<div>{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}</div>
+								<div><Spinner className="size-5" /></div>
+							</div>
+						</div>
+					</div>
+				{:else}
+					<div class="my-auto pb-10 w-full dark:text-gray-100">
+						<div
+							class="bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg rounded-3xl p-8 border border-gray-200/30 dark:border-gray-700/30 shadow-2xl shadow-black/10 dark:shadow-black/50"
+						>
+							{#if $config?.metadata?.auth_logo_position === 'center'}
+								<div class="flex justify-center mb-6">
+									<img
+										id="logo"
+										crossorigin="anonymous"
+										src="{WEBUI_BASE_URL}/static/favicon.png"
+										class="size-24 rounded-full"
+										alt="{$WEBUI_NAME} logo"
+									/>
+								</div>
+							{/if}
 
-                            <form
-                                class="flex flex-col justify-center"
-                                on:submit={(e) => {
-                                    e.preventDefault();
-                                    submitHandler();
-                                }}
-                            >
-                                <div class="mb-1">
-                                    <div class="text-2xl font-medium">
-                                        {#if $config?.onboarding ?? false}
-                                            {$i18n.t('Get started with {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
-                                        {:else if mode === 'ldap'}
-                                            {$i18n.t('Sign in to {{WEBUI_NAME}} with LDAP', { WEBUI_NAME: $WEBUI_NAME })}
-                                        {:else if mode === 'signin'}
-                                            {$i18n.t('Sign in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
-                                        {:else}
-                                            {$i18n.t('Sign up to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
-                                        {/if}
-                                    </div>
+							<form
+								class="flex flex-col justify-center"
+								on:submit={(e) => {
+									e.preventDefault();
+									submitHandler();
+								}}
+							>
+								<div class="mb-1">
+									<div class="text-2xl font-medium">
+										{#if $config?.onboarding ?? false}
+											{$i18n.t('Get started with {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+										{:else if mode === 'ldap'}
+											{$i18n.t('Sign in to {{WEBUI_NAME}} with LDAP', { WEBUI_NAME: $WEBUI_NAME })}
+										{:else if mode === 'signin'}
+											{$i18n.t('Sign in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+										{:else}
+											{$i18n.t('Sign up to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+										{/if}
+									</div>
 
-                                    {#if $config?.onboarding ?? false}
-                                        <div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
-                                            ⓘ {$WEBUI_NAME}
-                                            {$i18n.t(
-                                                'does not make any external connections, and your data stays securely on your locally hosted server.'
-                                            )}
-                                        </div>
-                                    {/if}
-                                </div>
+									{#if $config?.onboarding ?? false}
+										<div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
+											ⓘ {$WEBUI_NAME}
+											{$i18n.t(
+												'does not make any external connections, and your data stays securely on your locally hosted server.'
+											)}
+										</div>
+									{/if}
+								</div>
 
-                                {#if $config?.features?.enable_login_form || $config?.features?.enable_ldap || form}
-                                    <div class="flex flex-col mt-4">
-                                        {#if mode === 'signup'}
-                                            <div class="mb-2">
-                                                <label for="name" class="text-sm font-medium text-left mb-1 block">{$i18n.t('Name')}</label>
-                                                <input
-                                                    bind:value={name}
-                                                    type="text"
-                                                    id="name"
-                                                    class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                                                    autocomplete="name"
-                                                    placeholder={$i18n.t('Enter Your Full Name')}
-                                                    required
-                                                />
-                                            </div>
-                                        {/if}
+								{#if $config?.features?.enable_login_form || $config?.features?.enable_ldap || form}
+									<div class="flex flex-col mt-4">
+										{#if mode === 'signup'}
+											<div class="mb-2">
+												<label for="name" class="text-sm font-medium text-left mb-1 block"
+													>{$i18n.t('Name')}</label
+												>
+												<input
+													bind:value={name}
+													type="text"
+													id="name"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+													autocomplete="name"
+													placeholder={$i18n.t('Enter Your Full Name')}
+													required
+												/>
+											</div>
+										{/if}
 
-                                        {#if mode === 'ldap'}
-                                            <div class="mb-2">
-                                                <label for="username" class="text-sm font-medium text-left mb-1 block">{$i18n.t('Username')}</label>
-                                                <input
-                                                    bind:value={ldapUsername}
-                                                    type="text"
-                                                    class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                                                    autocomplete="username"
-                                                    name="username"
-                                                    id="username"
-                                                    placeholder={$i18n.t('Enter Your Username')}
-                                                    required
-                                                />
-                                            </div>
-                                        {:else}
-                                            <div class="mb-2">
-                                                <label for="email" class="text-sm font-medium text-left mb-1 block">{$i18n.t('Email')}</label>
-                                                <input
-                                                    bind:value={email}
-                                                    type="email"
-                                                    id="email"
-                                                    class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                                                    autocomplete="email"
-                                                    name="email"
-                                                    placeholder={$i18n.t('Enter Your Email')}
-                                                    required
-                                                />
-                                            </div>
-                                        {/if}
+										{#if mode === 'ldap'}
+											<div class="mb-2">
+												<label for="username" class="text-sm font-medium text-left mb-1 block"
+													>{$i18n.t('Username')}</label
+												>
+												<input
+													bind:value={ldapUsername}
+													type="text"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+													autocomplete="username"
+													name="username"
+													id="username"
+													placeholder={$i18n.t('Enter Your Username')}
+													required
+												/>
+											</div>
+										{:else}
+											<div class="mb-2">
+												<label for="email" class="text-sm font-medium text-left mb-1 block"
+													>{$i18n.t('Email')}</label
+												>
+												<input
+													bind:value={email}
+													type="email"
+													id="email"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+													autocomplete="email"
+													name="email"
+													placeholder={$i18n.t('Enter Your Email')}
+													required
+												/>
+											</div>
+										{/if}
 
-                                        <div>
-                                            <label for="password" class="text-sm font-medium text-left mb-1 block">{$i18n.t('Password')}</label>
-                                            <SensitiveInput
-                                                bind:value={password}
-                                                type="password"
-                                                id="password"
-                                                class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
-                                                placeholder={$i18n.t('Enter Your Password')}
-                                                autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                                                name="password"
+										<div>
+											<label for="password" class="text-sm font-medium text-left mb-1 block"
+												>{$i18n.t('Password')}</label
+											>
+											<SensitiveInput
+												bind:value={password}
+												type="password"
+												id="password"
+												class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+												placeholder={$i18n.t('Enter Your Password')}
+												autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
+												name="password"
 												screenReader={true}
-                                                required
+												required
 												aria-required="true"
-                                            />
-                                            {#if mode === 'signin'}
-                                                <div class="mt-1 text-right">
-                                                    <button
-                                                        type="button"
-                                                        class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline"
-                                                        on:click={() => goto('/auth/forgot-password')}
-                                                    >
-                                                        忘记密码？
-                                                    </button>
-                                                </div>
-                                            {/if}
-                                        </div>
+											/>
+											{#if mode === 'signin'}
+												<div class="mt-1 text-right">
+													<button
+														type="button"
+														class="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline"
+														on:click={() => goto('/auth/forgot-password')}
+													>
+														忘记密码？
+													</button>
+												</div>
+											{/if}
+										</div>
 
-                                        {#if mode === 'signup' && $config?.features?.enable_signup_password_confirmation}
-                                            <div class="mt-2">
-                                                <label for="confirm-password" class="text-sm font-medium text-left mb-1 block">{$i18n.t('Confirm Password')}</label>
-                                                <SensitiveInput
-                                                    bind:value={confirmPassword}
-                                                    type="password"
-                                                    id="confirm-password"
-                                                    class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-                                                    placeholder={$i18n.t('Confirm Your Password')}
-                                                    autocomplete="new-password"
-                                                    name="confirm-password"
-                                                    required
-                                                />
-                                            </div>
-                                        {/if}
+										{#if mode === 'signup' && $config?.features?.enable_signup_password_confirmation}
+											<div class="mt-2">
+												<label
+													for="confirm-password"
+													class="text-sm font-medium text-left mb-1 block"
+													>{$i18n.t('Confirm Password')}</label
+												>
+												<SensitiveInput
+													bind:value={confirmPassword}
+													type="password"
+													id="confirm-password"
+													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+													placeholder={$i18n.t('Confirm Your Password')}
+													autocomplete="new-password"
+													name="confirm-password"
+													required
+												/>
+											</div>
+										{/if}
 
-                                        {#if mode === 'signup' && $config?.ENABLE_RECAPTCHA && $config?.RECAPTCHA_SITE_KEY}
-                                            <div class="mt-3">
-                                                <ReCaptcha
-                                                    bind:this={recaptchaComponent}
-                                                    siteKey={$config.RECAPTCHA_SITE_KEY}
-                                                    theme="light"
-                                                    on:verified={handleRecaptchaVerified}
-                                                    on:expired={handleRecaptchaExpired}
-                                                    on:error={handleRecaptchaError}
-                                                />
-                                            </div>
-                                        {/if}
-                                    </div>
-                                {/if}
+										{#if mode === 'signup' && $config?.ENABLE_RECAPTCHA && $config?.RECAPTCHA_SITE_KEY}
+											<div class="mt-3">
+												<ReCaptcha
+													bind:this={recaptchaComponent}
+													siteKey={$config.RECAPTCHA_SITE_KEY}
+													theme="light"
+													on:verified={handleRecaptchaVerified}
+													on:expired={handleRecaptchaExpired}
+													on:error={handleRecaptchaError}
+												/>
+											</div>
+										{/if}
+									</div>
+								{/if}
 
-                                <div class="mt-5">
-                                    {#if $config?.features?.enable_login_form || $config?.features?.enable_ldap || form}
-                                        {#if mode === 'ldap'}
-                                            <button
-                                                class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-                                                type="submit"
-                                            >
-                                                {$i18n.t('Authenticate')}
-                                            </button>
-                                        {:else}
-                                            <button
-                                                class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-                                                type="submit"
-                                            >
-                                                {mode === 'signin'
-                                                    ? $i18n.t('Sign in')
-                                                    : ($config?.onboarding ?? false)
-                                                        ? $i18n.t('Create Admin Account')
-                                                        : $i18n.t('Create Account')}
-                                            </button>
+								<div class="mt-5">
+									{#if $config?.features?.enable_login_form || $config?.features?.enable_ldap || form}
+										{#if mode === 'ldap'}
+											<button
+												class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+												type="submit"
+											>
+												{$i18n.t('Authenticate')}
+											</button>
+										{:else}
+											<button
+												class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+												type="submit"
+											>
+												{mode === 'signin'
+													? $i18n.t('Sign in')
+													: ($config?.onboarding ?? false)
+														? $i18n.t('Create Admin Account')
+														: $i18n.t('Create Account')}
+											</button>
 
-                                            {#if $config?.features?.enable_signup && !($config?.onboarding ?? false)}
-                                                <div class="mt-4 text-sm text-center">
-                                                    {mode === 'signin' ? $i18n.t("Don't have an account?") : $i18n.t('Already have an account?')}
-                                                    <button
-                                                        class="font-medium underline ml-1"
-                                                        type="button"
-                                                        on:click={() => {
-                                                            mode = mode === 'signin' ? 'signup' : 'signin';
-                                                        }}
-                                                    >
-                                                        {mode === 'signin' ? $i18n.t('Sign up') : $i18n.t('Sign in')}
-                                                    </button>
-                                                </div>
-                                            {/if}
-                                        {/if}
-                                    {/if}
-                                </div>
-                            </form>
+											{#if $config?.features?.enable_signup && !($config?.onboarding ?? false)}
+												<div class="mt-4 text-sm text-center">
+													{mode === 'signin'
+														? $i18n.t("Don't have an account?")
+														: $i18n.t('Already have an account?')}
+													<button
+														class="font-medium underline ml-1"
+														type="button"
+														on:click={() => {
+															mode = mode === 'signin' ? 'signup' : 'signin';
+														}}
+													>
+														{mode === 'signin' ? $i18n.t('Sign up') : $i18n.t('Sign in')}
+													</button>
+												</div>
+											{/if}
+										{/if}
+									{/if}
+								</div>
+							</form>
 
 							{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
 								<div class="inline-flex items-center justify-center w-full">
@@ -561,49 +583,53 @@
 								</div>
 							{/if}
 
-                            {#if $config?.features?.enable_ldap && $config?.features?.enable_login_form}
-                                <div class="mt-2">
-                                    <button
-                                        class="flex justify-center items-center text-xs w-full text-center underline"
-                                        type="button"
-                                        on:click={() => {
-                                            if (mode === 'ldap') {
-                                                mode = ($config?.onboarding ?? false) ? 'signup' : 'signin';
-                                            } else {
-                                                mode = 'ldap';
-                                            }
-                                        }}
-                                    >
-                                        <span>{mode === 'ldap' ? $i18n.t('Continue with Email') : $i18n.t('Continue with LDAP')}</span>
-                                    </button>
-                                </div>
-                            {/if}
-                        </div>
-                    </div>
-                {/if}
-            </div>
-        </div>
+							{#if $config?.features?.enable_ldap && $config?.features?.enable_login_form}
+								<div class="mt-2">
+									<button
+										class="flex justify-center items-center text-xs w-full text-center underline"
+										type="button"
+										on:click={() => {
+											if (mode === 'ldap') {
+												mode = ($config?.onboarding ?? false) ? 'signup' : 'signin';
+											} else {
+												mode = 'ldap';
+											}
+										}}
+									>
+										<span
+											>{mode === 'ldap'
+												? $i18n.t('Continue with Email')
+												: $i18n.t('Continue with LDAP')}</span
+										>
+									</button>
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
 
-        {#if $config?.metadata?.login_footer}
-            <div class="max-w-3xl mx-auto">
-                <div class="mt-2 text-[0.7rem] text-gray-500 dark:text-gray-400 marked">
-                    {@html DOMPurify.sanitize(marked($config?.metadata?.login_footer))}
-                </div>
-            </div>
-        {/if}
-    {/if}
+		{#if $config?.metadata?.login_footer}
+			<div class="max-w-3xl mx-auto">
+				<div class="mt-2 text-[0.7rem] text-gray-500 dark:text-gray-400 marked">
+					{@html DOMPurify.sanitize(marked($config?.metadata?.login_footer))}
+				</div>
+			</div>
+		{/if}
+	{/if}
 </div>
 
 <style>
-    .auth-page {
-        background-color: white !important;
-        background-image: url('/static/banner.jpg');
-        background-repeat: no-repeat;
-        background-position: top center;
-        background-size: 100% auto;
-        background-attachment: fixed;
-    }
-    :global(.dark) .auth-page {
-        background-color: white !important;
-    }
+	.auth-page {
+		background-color: white !important;
+		background-image: url('/static/banner.jpg');
+		background-repeat: no-repeat;
+		background-position: top center;
+		background-size: 100% auto;
+		background-attachment: fixed;
+	}
+	:global(.dark) .auth-page {
+		background-color: white !important;
+	}
 </style>

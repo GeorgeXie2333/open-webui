@@ -354,18 +354,14 @@
 					</div>
 
 					<div class="mb-2.5 flex w-full justify-between pr-2">
-						<div class="self-center text-xs font-medium">
-							启用 reCAPTCHA 验证
-						</div>
+						<div class="self-center text-xs font-medium">启用 reCAPTCHA 验证</div>
 
 						<Switch bind:state={adminConfig.ENABLE_RECAPTCHA} />
 					</div>
 
 					{#if adminConfig.ENABLE_RECAPTCHA}
 						<div class="mb-2.5 flex w-full flex-col pr-2">
-							<div class=" text-xs font-medium">
-								reCAPTCHA Site Key
-							</div>
+							<div class=" text-xs font-medium">reCAPTCHA Site Key</div>
 
 							<input
 								class="w-full mt-1 rounded-lg text-sm dark:text-gray-300 bg-transparent outline-hidden"
@@ -1011,4 +1007,4 @@
 			{$i18n.t('Save')}
 		</button>
 	</div>
-</form> 
+</form>

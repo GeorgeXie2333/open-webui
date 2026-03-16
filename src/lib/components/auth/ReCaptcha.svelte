@@ -6,7 +6,7 @@
 	export let theme: 'light' | 'dark' = 'light';
 
 	const dispatch = createEventDispatcher();
-	
+
 	let recaptchaContainer: HTMLDivElement;
 	let widgetId: number | null = null;
 
@@ -19,7 +19,8 @@
 		// 加载reCAPTCHA脚本
 		if (!window.grecaptcha) {
 			const script = document.createElement('script');
-			script.src = 'https://www.recaptcha.net/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
+			script.src =
+				'https://www.recaptcha.net/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit';
 			script.async = true;
 			script.defer = true;
 			document.head.appendChild(script);
@@ -85,4 +86,4 @@
 		display: flex;
 		justify-content: center;
 	}
-</style> 
+</style>
