@@ -801,7 +801,10 @@ def is_openai_reasoning_model(model: str) -> bool:
     real_model_name = (model.lower().split("/", 1)[-1]).split(".", 1)[-1]
 
     # check for reasoning models
-    return real_model_name.startswith(("o1", "o3", "o4", "gpt-5"))
+    reasoning_models_prefixes = ("o1", "o3", "o4", "gpt-5")
+    return real_model_name.startswith(reasoning_models_prefixes) or model.startswith(
+        reasoning_models_prefixes
+    )
 
 
 def convert_to_azure_payload(url, payload: dict, api_version: str):
