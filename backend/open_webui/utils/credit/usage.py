@@ -48,8 +48,8 @@ class Calculator:
     def get_encoder(
         self,
         model_id: str,
-        model_prefix_to_remove: str = "",
-        default_model_for_encoding: str = "gpt-4o",
+        model_prefix_to_remove: str = '',
+        default_model_for_encoding: str = 'gpt-4o',
     ) -> Encoding:
         # remove prefix
         model_id_ops = model_id
@@ -71,8 +71,8 @@ class Calculator:
         model_id: str,
         messages: List[dict],
         response: Union[ChatCompletion, ChatCompletionChunk],
-        model_prefix_to_remove: str = "",
-        default_model_for_encoding: str = "gpt-4o",
+        model_prefix_to_remove: str = '',
+        default_model_for_encoding: str = 'gpt-4o',
     ) -> Tuple[bool, CompletionUsage]:
         try:
             # use provider usage
@@ -80,9 +80,7 @@ class Calculator:
                 return True, response.usage
 
             # init
-            usage = CompletionUsage(
-                prompt_tokens=0, completion_tokens=0, total_tokens=0
-            )
+            usage = CompletionUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
             encoder = self.get_encoder(
                 model_id=model_id,
                 model_prefix_to_remove=model_prefix_to_remove,
@@ -94,47 +92,37 @@ class Calculator:
             if cached_usage.prompt_tokens:
                 usage.prompt_tokens = cached_usage.prompt_tokens
             else:
-                for message in [
-                    MessageItem.model_validate(message) for message in messages
-                ]:
+                for message in [MessageItem.model_validate(message) for message in messages]:
                     if isinstance(message.content, str):
-                        usage.prompt_tokens += len(
-                            encoder.encode(message.content or "")
-                        )
+                        usage.prompt_tokens += len(encoder.encode(message.content or ''))
                     if isinstance(message.content, list):
                         for item in message.content:
                             item: MessageContent
-                            if item.type == "text":
-                                usage.prompt_tokens += len(
-                                    encoder.encode(item.text or "")
-                                )
-                            elif item.type == "image_url":
-                                usage.prompt_tokens += calculate_image_token(
-                                    model_id, item.image_url
-                                )
+                            if item.type == 'text':
+                                usage.prompt_tokens += len(encoder.encode(item.text or ''))
+                            elif item.type == 'image_url':
+                                usage.prompt_tokens += calculate_image_token(model_id, item.image_url)
 
             # completion tokens
             choices = response.choices
             if choices:
                 choice = choices[0]
                 if isinstance(response, ChatCompletion):
-                    content = choice.message.content or ""
+                    content = choice.message.content or ''
                     usage.completion_tokens = len(
                         # strip <think> to avoid empty token calculation
-                        encoder.encode(content.lstrip("<think>"))
+                        encoder.encode(content.lstrip('<think>'))
                     )
                 elif isinstance(response, ChatCompletionChunk):
-                    content = choice.delta.content or ""
+                    content = choice.delta.content or ''
                     # strip <think> to avoid empty token calculation
-                    usage.completion_tokens = len(
-                        encoder.encode(content.lstrip("<think>"))
-                    )
+                    usage.completion_tokens = len(encoder.encode(content.lstrip('<think>')))
 
             # total tokens
             usage.total_tokens = usage.prompt_tokens + usage.completion_tokens
             return False, usage
         except Exception as err:
-            logger.exception("[calculate_usage] failed: %s", err)
+            logger.exception('[calculate_usage] failed: %s', err)
             raise err
 
 
@@ -161,15 +149,13 @@ class CreditDeduct:
     ) -> None:
         self.is_error = False
         self.empty_no_cost = not is_embedding and CREDIT_NO_CHARGE_EMPTY_RESPONSE.value
-        self.remote_id = ""
+        self.remote_id = ''
         self.user = user
         self.model_id = model_id
         self.model = Models.get_model_by_id(self.model_id)
         self.body = body
         self.is_stream = is_stream
-        self.usage = CompletionUsage(
-            prompt_tokens=0, completion_tokens=0, total_tokens=0
-        )
+        self.usage = CompletionUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
         (
             self._prompt_unit_price,
             self._completion_unit_price,
@@ -182,13 +168,7 @@ class CreditDeduct:
             self.request_unit_price,
             _,
         ) = get_model_price(model=self.model, is_embedding=is_embedding)
-        self.features = {
-            k
-            for k, v in (
-                body.get("metadata", {}).get("features_for_credit", {}) or {}
-            ).items()
-            if v
-        }
+        self.features = {k for k, v in (body.get('metadata', {}).get('features_for_credit', {}) or {}).items() if v}
         self.custom_fees = self.build_custom_fees(body)
         self.is_official_usage = False
 
@@ -204,37 +184,34 @@ class CreditDeduct:
                 amount=Decimal(-self.total_price),
                 detail=SetCreditFormDetail(
                     usage={
-                        "total_price": float(self.total_price),
-                        "prompt_unit_price": float(self.prompt_unit_price),
-                        "prompt_cache_unit_price": float(self.prompt_cache_unit_price),
-                        "completion_unit_price": float(self.completion_unit_price),
-                        "request_unit_price": float(self.request_unit_price),
-                        "feature_price": float(self.feature_price),
-                        "features": list(self.features),
-                        "custom_fee": float(self.custom_price),
-                        "custom_fee_detail": {
-                            k: float(v / 1000 / 1000)
-                            for k, v in self.custom_fees.items()
-                        },
-                        "is_calculate": not self.is_official_usage,
-                        "is_empty_response": self.is_empty_response,
-                        "empty_no_cost": self.empty_no_cost,
+                        'total_price': float(self.total_price),
+                        'prompt_unit_price': float(self.prompt_unit_price),
+                        'prompt_cache_unit_price': float(self.prompt_cache_unit_price),
+                        'completion_unit_price': float(self.completion_unit_price),
+                        'request_unit_price': float(self.request_unit_price),
+                        'feature_price': float(self.feature_price),
+                        'features': list(self.features),
+                        'custom_fee': float(self.custom_price),
+                        'custom_fee_detail': {k: float(v / 1000 / 1000) for k, v in self.custom_fees.items()},
+                        'is_calculate': not self.is_official_usage,
+                        'is_empty_response': self.is_empty_response,
+                        'empty_no_cost': self.empty_no_cost,
                         **self.usage.model_dump(exclude_unset=True, exclude_none=True),
                     },
                     api_params={
-                        "model": (
+                        'model': (
                             self.model.model_dump(exclude_unset=True, exclude_none=True)
                             if self.model
-                            else {"id": self.model_id}
+                            else {'id': self.model_id}
                         ),
-                        "is_stream": self.is_stream,
+                        'is_stream': self.is_stream,
                     },
-                    desc=f"updated by {self.__class__.__name__}",
+                    desc=f'updated by {self.__class__.__name__}',
                 ),
             )
         )
         logger.info(
-            "[credit_deduct] user: %s; model: %s; tokens: %d %d; cost: %s",
+            '[credit_deduct] user: %s; model: %s; tokens: %d %d; cost: %s',
             self.user.name,
             self.model_id,
             self.usage.prompt_tokens,
@@ -248,19 +225,13 @@ class CreditDeduct:
 
     @property
     def prompt_unit_price(self) -> Decimal:
-        if (
-            self.usage.prompt_tokens >= self._prompt_long_ctx_tokens > 0
-            and self._prompt_long_ctx_unit_price > 0
-        ):
+        if self.usage.prompt_tokens >= self._prompt_long_ctx_tokens > 0 and self._prompt_long_ctx_unit_price > 0:
             return self._prompt_long_ctx_unit_price
         return self._prompt_unit_price
 
     @property
     def prompt_cache_unit_price(self) -> Decimal:
-        if (
-            self.usage.prompt_tokens >= self._prompt_long_ctx_tokens > 0
-            and self._prompt_long_ctx_cache_unit_price > 0
-        ):
+        if self.usage.prompt_tokens >= self._prompt_long_ctx_tokens > 0 and self._prompt_long_ctx_cache_unit_price > 0:
             return self._prompt_long_ctx_cache_unit_price
         return self._prompt_cache_unit_price
 
@@ -279,15 +250,9 @@ class CreditDeduct:
             return Decimal(0)
         cache_tokens = 0
         # load from prompt_tokens_details or input_tokens_details
-        if (
-            self.usage.prompt_tokens_details is not None
-            and self.usage.prompt_tokens_details.cached_tokens
-        ):
+        if self.usage.prompt_tokens_details is not None and self.usage.prompt_tokens_details.cached_tokens:
             cache_tokens = self.usage.prompt_tokens_details.cached_tokens or 0
-        elif (
-            self.usage.input_tokens_details is not None
-            and self.usage.input_tokens_details.cached_tokens
-        ):
+        elif self.usage.input_tokens_details is not None and self.usage.input_tokens_details.cached_tokens:
             cache_tokens = self.usage.input_tokens_details.cached_tokens or 0
         # check cache price
         if cache_tokens > 0 and self.prompt_cache_unit_price > 0:
@@ -332,54 +297,45 @@ class CreditDeduct:
         if self.request_unit_price > 0:
             total_price = self.request_price + self.feature_price + self.custom_price
         else:
-            total_price = (
-                self.prompt_price
-                + self.completion_price
-                + self.feature_price
-                + self.custom_price
-            )
+            total_price = self.prompt_price + self.completion_price + self.feature_price + self.custom_price
         return max(total_price, Decimal(USAGE_CALCULATE_MINIMUM_COST.value))
 
     def add_usage_to_resp(self, response: dict) -> dict:
         if not isinstance(response, dict):
             return response
-        response["usage"] = self.usage_with_cost
+        response['usage'] = self.usage_with_cost
         return response
 
     @property
     def usage_with_cost(self) -> dict:
         return {
-            "total_cost": float(self.total_price),
-            "cost_detail": {
-                "prompt_price": float(self.prompt_price),
-                "completion_price": float(self.completion_price),
-                "request_price": float(self.request_price),
-                "feature_price": float(self.feature_price),
-                "features": list(self.features),
-                "custom_fee": float(self.custom_price),
-                "custom_fee_detail": {
-                    k: float(v / 1000 / 1000) for k, v in self.custom_fees.items()
-                },
-                "is_calculate": not self.is_official_usage,
-                "is_error": self.is_error,
-                "is_empty_response": self.is_empty_response,
-                "empty_no_cost": self.empty_no_cost,
+            'total_cost': float(self.total_price),
+            'cost_detail': {
+                'prompt_price': float(self.prompt_price),
+                'completion_price': float(self.completion_price),
+                'request_price': float(self.request_price),
+                'feature_price': float(self.feature_price),
+                'features': list(self.features),
+                'custom_fee': float(self.custom_price),
+                'custom_fee_detail': {k: float(v / 1000 / 1000) for k, v in self.custom_fees.items()},
+                'is_calculate': not self.is_official_usage,
+                'is_error': self.is_error,
+                'is_empty_response': self.is_empty_response,
+                'empty_no_cost': self.empty_no_cost,
             },
             **self.usage.model_dump(exclude_unset=True, exclude_none=True),
         }
 
     @property
     def usage_message(self) -> str:
-        return "data: %s\n\n" % json.dumps(
+        return 'data: %s\n\n' % json.dumps(
             {
-                "id": self.remote_id,
-                "created": int(time.time()),
-                "model": self.model_id,
-                "choices": [],
-                "object": (
-                    "chat.completion.chunk" if self.is_stream else "chat.completion"
-                ),
-                "usage": self.usage_with_cost,
+                'id': self.remote_id,
+                'created': int(time.time()),
+                'model': self.model_id,
+                'choices': [],
+                'object': ('chat.completion.chunk' if self.is_stream else 'chat.completion'),
+                'usage': self.usage_with_cost,
             }
         )
 
@@ -391,28 +347,26 @@ class CreditDeduct:
             return custom_fees
         # Check config not empty
         custom_config_str = USAGE_CUSTOM_PRICE_CONFIG.value
-        if not custom_config_str or custom_config_str == "[]":
+        if not custom_config_str or custom_config_str == '[]':
             return custom_fees
         # Parse the custom config string
         try:
             # load as json
             custom_configs = json.loads(custom_config_str)
             if not isinstance(custom_configs, list):
-                logger.warning("[credit_deduct] custom price config is not a list")
+                logger.warning('[credit_deduct] custom price config is not a list')
                 return custom_fees
             # parse config from body
             for config in custom_configs:
                 if not isinstance(config, dict):
-                    logger.warning(
-                        "[credit_deduct] custom price config has no dict value"
-                    )
+                    logger.warning('[credit_deduct] custom price config has no dict value')
                     continue
                 # load config
-                path = config["path"]
-                name = config["name"]
-                value = config["value"]
-                exists_check = config["exists"]
-                cost = config["cost"]
+                path = config['path']
+                name = config['name']
+                value = config['value']
+                exists_check = config['exists']
+                cost = config['cost']
                 if not path or cost <= 0:
                     continue
                 # Apply jsonpath to the request body
@@ -431,36 +385,36 @@ class CreditDeduct:
                             break
                 except Exception as e:
                     logger.warning(
-                        "[credit_deduct] Error parse custom price config %s: %s",
+                        '[credit_deduct] Error parse custom price config %s: %s',
                         path,
                         e,
                     )
         except Exception as e:
-            logger.warning("[credit_deduct] Error parse custom price: %s", e)
+            logger.warning('[credit_deduct] Error parse custom price: %s', e)
         return custom_fees
 
     def run(self, response: Union[dict, bytes, str]) -> None:
         try:
             self._run(response)
         except Exception as e:
-            logger.warning("[credit_deduct_failed] unknown error %s", e)
+            logger.warning('[credit_deduct_failed] unknown error %s', e)
 
     def _run(self, response: Union[dict, bytes, str]) -> None:
         if not isinstance(response, (dict, bytes, str)):
-            logger.warning("[credit_deduct] response is type of %s", type(response))
+            logger.warning('[credit_deduct] response is type of %s', type(response))
             return
 
         # prompt messages
-        messages = self.body.get("messages", [])
+        messages = self.body.get('messages', [])
         if not messages:
-            raise HTTPException(status_code=400, detail="prompt messages is empty")
+            raise HTTPException(status_code=400, detail='prompt messages is empty')
 
         # stream
         if self.is_stream:
             _response = self.clean_response(
                 response=response,
                 default_response={
-                    "choices": [{"delta": {"content": self.to_str(response)}}],
+                    'choices': [{'delta': {'content': self.to_str(response)}}],
                 },
             )
             if not _response:
@@ -473,7 +427,7 @@ class CreditDeduct:
             _response = self.clean_response(
                 response=response,
                 default_response={
-                    "choices": [{"message": {"content": self.to_str(response)}}],
+                    'choices': [{'message': {'content': self.to_str(response)}}],
                 },
             )
             if not _response:
@@ -482,12 +436,12 @@ class CreditDeduct:
             response = ChatCompletion.model_validate(_response)
 
         # check for error
-        if _response.get("error"):
+        if _response.get('error'):
             self.is_error = True
             return
 
         # record is
-        self.remote_id = getattr(response, "id", "")
+        self.remote_id = getattr(response, 'id', '')
 
         # calculate
         is_official_usage, usage = calculator.calculate_usage(
@@ -511,26 +465,22 @@ class CreditDeduct:
         if self.is_stream:
             self.usage.prompt_tokens = usage.prompt_tokens
             self.usage.completion_tokens += usage.completion_tokens
-            self.usage.total_tokens = (
-                self.usage.prompt_tokens + self.usage.completion_tokens
-            )
+            self.usage.total_tokens = self.usage.prompt_tokens + self.usage.completion_tokens
             return
         self.usage = usage
 
-    def clean_response(
-        self, response: Union[dict, bytes, str], default_response: dict
-    ) -> dict:
+    def clean_response(self, response: Union[dict, bytes, str], default_response: dict) -> dict:
         # dict
         if isinstance(response, dict):
             return response
         # str or bytes
         if isinstance(response, bytes):
-            _response = response.decode("utf-8")
+            _response = response.decode('utf-8')
         else:
             _response = response
         # remove prefix
-        _response = _response.strip().lstrip("data: ")
-        if _response.startswith("[DONE]") or not _response:
+        _response = _response.strip().lstrip('data: ')
+        if _response.startswith('[DONE]') or not _response:
             return {}
         try:
             _response = json.loads(_response)
@@ -542,5 +492,5 @@ class CreditDeduct:
         if isinstance(data, str):
             return data.strip()
         if isinstance(data, bytes):
-            return data.decode("utf-8").strip()
+            return data.decode('utf-8').strip()
         return str(data)

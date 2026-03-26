@@ -149,16 +149,16 @@ def create_session_response(request: Request, user, db, response: Response = Non
     user_permissions = get_permissions(user.id, request.app.state.config.USER_PERMISSIONS, db=db)
 
     return {
-        "token": token,
-        "token_type": "Bearer",
-        "expires_at": expires_at,
-        "id": user.id,
-        "email": user.email,
-        "name": user.name,
-        "role": user.role,
-        "profile_image_url": f"/api/v1/users/{user.id}/profile/image",
-        "permissions": user_permissions,
-        "credit": credit.credit,
+        'token': token,
+        'token_type': 'Bearer',
+        'expires_at': expires_at,
+        'id': user.id,
+        'email': user.email,
+        'name': user.name,
+        'role': user.role,
+        'profile_image_url': f'/api/v1/users/{user.id}/profile/image',
+        'permissions': user_permissions,
+        'credit': credit.credit,
     }
 
 
@@ -186,7 +186,7 @@ async def get_session_user(
     user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_session),
 ):
-    auth_header = request.headers.get("Authorization")
+    auth_header = request.headers.get('Authorization')
     auth_token = get_http_authorization_cred(auth_header)
     token = auth_token.credentials
     data = decode_token(token)
@@ -219,22 +219,22 @@ async def get_session_user(
     credit = Credits.init_credit_by_user_id(user.id)
 
     return {
-        "token": token,
-        "token_type": "Bearer",
-        "expires_at": expires_at,
-        "id": user.id,
-        "email": user.email,
-        "name": user.name,
-        "role": user.role,
-        "profile_image_url": user.profile_image_url,
-        "bio": user.bio,
-        "gender": user.gender,
-        "date_of_birth": user.date_of_birth,
-        "status_emoji": user.status_emoji,
-        "status_message": user.status_message,
-        "status_expires_at": user.status_expires_at,
-        "permissions": user_permissions,
-        "credit": credit.credit,
+        'token': token,
+        'token_type': 'Bearer',
+        'expires_at': expires_at,
+        'id': user.id,
+        'email': user.email,
+        'name': user.name,
+        'role': user.role,
+        'profile_image_url': user.profile_image_url,
+        'bio': user.bio,
+        'gender': user.gender,
+        'date_of_birth': user.date_of_birth,
+        'status_emoji': user.status_emoji,
+        'status_message': user.status_message,
+        'status_expires_at': user.status_expires_at,
+        'permissions': user_permissions,
+        'credit': credit.credit,
     }
 
 
@@ -686,9 +686,9 @@ async def signup_handler(
 
     has_users = Users.has_users(db=db)
     if not has_users:
-        role = "admin"
+        role = 'admin'
     elif request.app.state.config.ENABLE_SIGNUP_VERIFY:
-        role = "pending"
+        role = 'pending'
         send_verify_email(email=email.lower())
     else:
         role = request.app.state.config.DEFAULT_USER_ROLE
@@ -752,17 +752,13 @@ async def signup(
             raise HTTPException(status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED)
 
     # check for email domain whitelist
-    email_domain_whitelist = [
-        i.strip()
-        for i in request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST.split(",")
-        if i
-    ]
+    email_domain_whitelist = [i.strip() for i in request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST.split(',') if i]
     if email_domain_whitelist:
-        domain = form_data.email.split("@")[-1]
+        domain = form_data.email.split('@')[-1]
         if domain not in email_domain_whitelist:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN,
-                detail=f"Only emails from {request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST} are allowed",
+                detail=f'Only emails from {request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST} are allowed',
             )
 
     if not validate_email_format(form_data.email.lower()):
@@ -793,24 +789,22 @@ async def signup(
         raise HTTPException(500, detail='An internal error occurred during signup.')
 
 
-@router.get("/signup_verify/{code}")
+@router.get('/signup_verify/{code}')
 async def signup_verify(request: Request, code: str):
     email = verify_email_by_code(code=code)
     if not email:
-        raise HTTPException(403, detail="Invalid code")
+        raise HTTPException(403, detail='Invalid code')
 
     user = Users.get_user_by_email(email)
     if not user:
-        raise HTTPException(404, detail="User not found")
+        raise HTTPException(404, detail='User not found')
 
-    Users.update_user_role_by_id(user.id, "user")
+    Users.update_user_role_by_id(user.id, 'user')
     return RedirectResponse(url=request.app.state.config.WEBUI_URL)
 
 
-@router.get("/signout")
-async def signout(
-    request: Request, response: Response, db: Session = Depends(get_session)
-):
+@router.get('/signout')
+async def signout(request: Request, response: Response, db: Session = Depends(get_session)):
     # get auth token from headers or cookies
     token = None
     auth_header = request.headers.get('Authorization')
@@ -995,35 +989,35 @@ async def get_admin_details(request: Request, user=Depends(get_current_user), db
 @router.get('/admin/config')
 async def get_admin_config(request: Request, user=Depends(get_admin_user)):
     return {
-        "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
-        "ADMIN_EMAIL": request.app.state.config.ADMIN_EMAIL,
-        "WEBUI_URL": request.app.state.config.WEBUI_URL,
-        "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
-        "ENABLE_SIGNUP_VERIFY": request.app.state.config.ENABLE_SIGNUP_VERIFY,
-        "SIGNUP_EMAIL_DOMAIN_WHITELIST": request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST,
-        "SMTP_HOST": request.app.state.config.SMTP_HOST,
-        "SMTP_PORT": request.app.state.config.SMTP_PORT,
-        "SMTP_USERNAME": request.app.state.config.SMTP_USERNAME,
-        "SMTP_PASSWORD": request.app.state.config.SMTP_PASSWORD,
-        "SMTP_SENT_FROM": request.app.state.config.SMTP_SENT_FROM,
-        "ENABLE_API_KEYS": request.app.state.config.ENABLE_API_KEYS,
-        "ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS": request.app.state.config.ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS,
-        "API_KEYS_ALLOWED_ENDPOINTS": request.app.state.config.API_KEYS_ALLOWED_ENDPOINTS,
-        "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
-        "DEFAULT_GROUP_ID": request.app.state.config.DEFAULT_GROUP_ID,
-        "JWT_EXPIRES_IN": request.app.state.config.JWT_EXPIRES_IN,
-        "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
-        "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
-        "ENABLE_FOLDERS": request.app.state.config.ENABLE_FOLDERS,
-        "FOLDER_MAX_FILE_COUNT": request.app.state.config.FOLDER_MAX_FILE_COUNT,
-        "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
-        "ENABLE_MEMORIES": request.app.state.config.ENABLE_MEMORIES,
-        "ENABLE_NOTES": request.app.state.config.ENABLE_NOTES,
-        "ENABLE_USER_WEBHOOKS": request.app.state.config.ENABLE_USER_WEBHOOKS,
-        "ENABLE_USER_STATUS": request.app.state.config.ENABLE_USER_STATUS,
-        "PENDING_USER_OVERLAY_TITLE": request.app.state.config.PENDING_USER_OVERLAY_TITLE,
-        "PENDING_USER_OVERLAY_CONTENT": request.app.state.config.PENDING_USER_OVERLAY_CONTENT,
-        "RESPONSE_WATERMARK": request.app.state.config.RESPONSE_WATERMARK,
+        'SHOW_ADMIN_DETAILS': request.app.state.config.SHOW_ADMIN_DETAILS,
+        'ADMIN_EMAIL': request.app.state.config.ADMIN_EMAIL,
+        'WEBUI_URL': request.app.state.config.WEBUI_URL,
+        'ENABLE_SIGNUP': request.app.state.config.ENABLE_SIGNUP,
+        'ENABLE_SIGNUP_VERIFY': request.app.state.config.ENABLE_SIGNUP_VERIFY,
+        'SIGNUP_EMAIL_DOMAIN_WHITELIST': request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST,
+        'SMTP_HOST': request.app.state.config.SMTP_HOST,
+        'SMTP_PORT': request.app.state.config.SMTP_PORT,
+        'SMTP_USERNAME': request.app.state.config.SMTP_USERNAME,
+        'SMTP_PASSWORD': request.app.state.config.SMTP_PASSWORD,
+        'SMTP_SENT_FROM': request.app.state.config.SMTP_SENT_FROM,
+        'ENABLE_API_KEYS': request.app.state.config.ENABLE_API_KEYS,
+        'ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS': request.app.state.config.ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS,
+        'API_KEYS_ALLOWED_ENDPOINTS': request.app.state.config.API_KEYS_ALLOWED_ENDPOINTS,
+        'DEFAULT_USER_ROLE': request.app.state.config.DEFAULT_USER_ROLE,
+        'DEFAULT_GROUP_ID': request.app.state.config.DEFAULT_GROUP_ID,
+        'JWT_EXPIRES_IN': request.app.state.config.JWT_EXPIRES_IN,
+        'ENABLE_COMMUNITY_SHARING': request.app.state.config.ENABLE_COMMUNITY_SHARING,
+        'ENABLE_MESSAGE_RATING': request.app.state.config.ENABLE_MESSAGE_RATING,
+        'ENABLE_FOLDERS': request.app.state.config.ENABLE_FOLDERS,
+        'FOLDER_MAX_FILE_COUNT': request.app.state.config.FOLDER_MAX_FILE_COUNT,
+        'ENABLE_CHANNELS': request.app.state.config.ENABLE_CHANNELS,
+        'ENABLE_MEMORIES': request.app.state.config.ENABLE_MEMORIES,
+        'ENABLE_NOTES': request.app.state.config.ENABLE_NOTES,
+        'ENABLE_USER_WEBHOOKS': request.app.state.config.ENABLE_USER_WEBHOOKS,
+        'ENABLE_USER_STATUS': request.app.state.config.ENABLE_USER_STATUS,
+        'PENDING_USER_OVERLAY_TITLE': request.app.state.config.PENDING_USER_OVERLAY_TITLE,
+        'PENDING_USER_OVERLAY_CONTENT': request.app.state.config.PENDING_USER_OVERLAY_CONTENT,
+        'RESPONSE_WATERMARK': request.app.state.config.RESPONSE_WATERMARK,
     }
 
 
@@ -1033,7 +1027,7 @@ class AdminConfig(BaseModel):
     WEBUI_URL: str
     ENABLE_SIGNUP: bool
     ENABLE_SIGNUP_VERIFY: bool = Field(default=False)
-    SIGNUP_EMAIL_DOMAIN_WHITELIST: str = Field(default="")
+    SIGNUP_EMAIL_DOMAIN_WHITELIST: str = Field(default='')
     SMTP_HOST: str
     SMTP_PORT: str
     SMTP_USERNAME: str
@@ -1059,31 +1053,25 @@ class AdminConfig(BaseModel):
     RESPONSE_WATERMARK: Optional[str] = None
 
 
-@router.post("/admin/config")
-async def update_admin_config(
-    request: Request, form_data: AdminConfig, user=Depends(get_admin_user)
-):
+@router.post('/admin/config')
+async def update_admin_config(request: Request, form_data: AdminConfig, user=Depends(get_admin_user)):
     # verify redis status
     if form_data.ENABLE_SIGNUP_VERIFY:
         # check redis
         _redis = get_redis_connection(
             redis_url=REDIS_URL,
-            redis_sentinels=get_sentinels_from_env(
-                REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT
-            ),
+            redis_sentinels=get_sentinels_from_env(REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT),
             redis_cluster=REDIS_CLUSTER,
         )
         if not _redis:
-            raise HTTPException(status_code=400, detail="Redis is not configured.")
+            raise HTTPException(status_code=400, detail='Redis is not configured.')
 
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.ADMIN_EMAIL = form_data.ADMIN_EMAIL
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL
     request.app.state.config.ENABLE_SIGNUP = form_data.ENABLE_SIGNUP
     request.app.state.config.ENABLE_SIGNUP_VERIFY = form_data.ENABLE_SIGNUP_VERIFY
-    request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST = (
-        form_data.SIGNUP_EMAIL_DOMAIN_WHITELIST
-    )
+    request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST = form_data.SIGNUP_EMAIL_DOMAIN_WHITELIST
     request.app.state.config.SMTP_HOST = form_data.SMTP_HOST
     request.app.state.config.SMTP_PORT = form_data.SMTP_PORT
     request.app.state.config.SMTP_USERNAME = form_data.SMTP_USERNAME
@@ -1125,35 +1113,35 @@ async def update_admin_config(
     request.app.state.config.RESPONSE_WATERMARK = form_data.RESPONSE_WATERMARK
 
     return {
-        "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
-        "ADMIN_EMAIL": request.app.state.config.ADMIN_EMAIL,
-        "WEBUI_URL": request.app.state.config.WEBUI_URL,
-        "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
-        "ENABLE_SIGNUP_VERIFY": request.app.state.config.ENABLE_SIGNUP_VERIFY,
-        "SIGNUP_EMAIL_DOMAIN_WHITELIST": request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST,
-        "SMTP_HOST": request.app.state.config.SMTP_HOST,
-        "SMTP_PORT": request.app.state.config.SMTP_PORT,
-        "SMTP_USERNAME": request.app.state.config.SMTP_USERNAME,
-        "SMTP_PASSWORD": request.app.state.config.SMTP_PASSWORD,
-        "SMTP_SENT_FROM": request.app.state.config.SMTP_SENT_FROM,
-        "ENABLE_API_KEYS": request.app.state.config.ENABLE_API_KEYS,
-        "ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS": request.app.state.config.ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS,
-        "API_KEYS_ALLOWED_ENDPOINTS": request.app.state.config.API_KEYS_ALLOWED_ENDPOINTS,
-        "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
-        "DEFAULT_GROUP_ID": request.app.state.config.DEFAULT_GROUP_ID,
-        "JWT_EXPIRES_IN": request.app.state.config.JWT_EXPIRES_IN,
-        "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
-        "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
-        "ENABLE_FOLDERS": request.app.state.config.ENABLE_FOLDERS,
-        "FOLDER_MAX_FILE_COUNT": request.app.state.config.FOLDER_MAX_FILE_COUNT,
-        "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
-        "ENABLE_MEMORIES": request.app.state.config.ENABLE_MEMORIES,
-        "ENABLE_NOTES": request.app.state.config.ENABLE_NOTES,
-        "ENABLE_USER_WEBHOOKS": request.app.state.config.ENABLE_USER_WEBHOOKS,
-        "ENABLE_USER_STATUS": request.app.state.config.ENABLE_USER_STATUS,
-        "PENDING_USER_OVERLAY_TITLE": request.app.state.config.PENDING_USER_OVERLAY_TITLE,
-        "PENDING_USER_OVERLAY_CONTENT": request.app.state.config.PENDING_USER_OVERLAY_CONTENT,
-        "RESPONSE_WATERMARK": request.app.state.config.RESPONSE_WATERMARK,
+        'SHOW_ADMIN_DETAILS': request.app.state.config.SHOW_ADMIN_DETAILS,
+        'ADMIN_EMAIL': request.app.state.config.ADMIN_EMAIL,
+        'WEBUI_URL': request.app.state.config.WEBUI_URL,
+        'ENABLE_SIGNUP': request.app.state.config.ENABLE_SIGNUP,
+        'ENABLE_SIGNUP_VERIFY': request.app.state.config.ENABLE_SIGNUP_VERIFY,
+        'SIGNUP_EMAIL_DOMAIN_WHITELIST': request.app.state.config.SIGNUP_EMAIL_DOMAIN_WHITELIST,
+        'SMTP_HOST': request.app.state.config.SMTP_HOST,
+        'SMTP_PORT': request.app.state.config.SMTP_PORT,
+        'SMTP_USERNAME': request.app.state.config.SMTP_USERNAME,
+        'SMTP_PASSWORD': request.app.state.config.SMTP_PASSWORD,
+        'SMTP_SENT_FROM': request.app.state.config.SMTP_SENT_FROM,
+        'ENABLE_API_KEYS': request.app.state.config.ENABLE_API_KEYS,
+        'ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS': request.app.state.config.ENABLE_API_KEYS_ENDPOINT_RESTRICTIONS,
+        'API_KEYS_ALLOWED_ENDPOINTS': request.app.state.config.API_KEYS_ALLOWED_ENDPOINTS,
+        'DEFAULT_USER_ROLE': request.app.state.config.DEFAULT_USER_ROLE,
+        'DEFAULT_GROUP_ID': request.app.state.config.DEFAULT_GROUP_ID,
+        'JWT_EXPIRES_IN': request.app.state.config.JWT_EXPIRES_IN,
+        'ENABLE_COMMUNITY_SHARING': request.app.state.config.ENABLE_COMMUNITY_SHARING,
+        'ENABLE_MESSAGE_RATING': request.app.state.config.ENABLE_MESSAGE_RATING,
+        'ENABLE_FOLDERS': request.app.state.config.ENABLE_FOLDERS,
+        'FOLDER_MAX_FILE_COUNT': request.app.state.config.FOLDER_MAX_FILE_COUNT,
+        'ENABLE_CHANNELS': request.app.state.config.ENABLE_CHANNELS,
+        'ENABLE_MEMORIES': request.app.state.config.ENABLE_MEMORIES,
+        'ENABLE_NOTES': request.app.state.config.ENABLE_NOTES,
+        'ENABLE_USER_WEBHOOKS': request.app.state.config.ENABLE_USER_WEBHOOKS,
+        'ENABLE_USER_STATUS': request.app.state.config.ENABLE_USER_STATUS,
+        'PENDING_USER_OVERLAY_TITLE': request.app.state.config.PENDING_USER_OVERLAY_TITLE,
+        'PENDING_USER_OVERLAY_CONTENT': request.app.state.config.PENDING_USER_OVERLAY_CONTENT,
+        'RESPONSE_WATERMARK': request.app.state.config.RESPONSE_WATERMARK,
     }
 
 

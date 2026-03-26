@@ -164,7 +164,7 @@ async def send_post_request(
 
             streaming = True
             return StreamingResponse(
-                stream_wrapper(user, payload["model"], payload, r, session),
+                stream_wrapper(user, payload['model'], payload, r, session),
                 status_code=r.status,
                 headers=response_headers,
             )
@@ -1120,7 +1120,7 @@ async def embeddings(
             with CreditDeduct(
                 user=user,
                 model_id=form_data.model,
-                body={"messages": [{"role": "user", "content": input_text}]},
+                body={'messages': [{'role': 'user', 'content': input_text}]},
                 is_stream=False,
                 is_embedding=True,
             ) as credit_deduct:
@@ -1473,7 +1473,7 @@ async def generate_openai_chat_completion(
 
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
-    metadata = form_data.pop("metadata", None)
+    metadata = form_data.pop('metadata', None)
 
     try:
         completion_form = OpenAIChatCompletionForm(**form_data)

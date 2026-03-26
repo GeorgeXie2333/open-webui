@@ -110,7 +110,7 @@ class UserModel(BaseModel):
     updated_at: int  # timestamp in epoch
     created_at: int  # timestamp in epoch
 
-    model_config = ConfigDict(from_attributes=True, extra="allow")
+    model_config = ConfigDict(from_attributes=True, extra='allow')
 
     @model_validator(mode='after')
     def set_profile_image_url(self):

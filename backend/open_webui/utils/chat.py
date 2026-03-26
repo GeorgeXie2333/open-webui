@@ -171,7 +171,7 @@ async def generate_chat_completion(
 ):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
-    log.debug(f"generate_chat_completion: {form_data}")
+    log.debug(f'generate_chat_completion: {form_data}')
     if BYPASS_MODEL_ACCESS_CONTROL:
         bypass_filter = True
 
@@ -296,9 +296,7 @@ async def generate_chat_completion(
             if form_data.get('stream'):
                 response.headers['content-type'] = 'text/event-stream'
                 return StreamingResponse(
-                    convert_streaming_response_ollama_to_openai(
-                        user, model_id, payload, response
-                    ),
+                    convert_streaming_response_ollama_to_openai(user, model_id, payload, response),
                     headers=dict(response.headers),
                     background=response.background,
                 )

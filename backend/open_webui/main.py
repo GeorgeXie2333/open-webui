@@ -1338,25 +1338,13 @@ app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE = CREDIT_NO_CHARGE_EMPTY_RESPON
 app.state.config.CREDIT_NO_CREDIT_MSG = CREDIT_NO_CREDIT_MSG
 app.state.config.CREDIT_EXCHANGE_RATIO = CREDIT_EXCHANGE_RATIO
 app.state.config.CREDIT_DEFAULT_CREDIT = CREDIT_DEFAULT_CREDIT
-app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE = (
-    USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE
-)
+app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE = USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE
 app.state.config.USAGE_DEFAULT_ENCODING_MODEL = USAGE_DEFAULT_ENCODING_MODEL
-app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE = (
-    USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE
-)
-app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE = (
-    USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE
-)
-app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE = (
-    USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE
-)
-app.state.config.USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE = (
-    USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE
-)
-app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE = (
-    USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE
-)
+app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE = USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE
+app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE = USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE
+app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE = USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE
+app.state.config.USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE = USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE
+app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE = USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE
 app.state.config.USAGE_CALCULATE_MINIMUM_COST = USAGE_CALCULATE_MINIMUM_COST
 app.state.config.USAGE_CUSTOM_PRICE_CONFIG = USAGE_CUSTOM_PRICE_CONFIG
 app.state.config.EZFP_PAY_PRIORITY = EZFP_PAY_PRIORITY
@@ -1539,14 +1527,14 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.mount("/ws", socket_app)
+app.mount('/ws', socket_app)
 
-app.include_router(ollama.router, prefix="/ollama", tags=["ollama"])
-app.include_router(openai.router, prefix="/openai", tags=["openai"])
+app.include_router(ollama.router, prefix='/ollama', tags=['ollama'])
+app.include_router(openai.router, prefix='/openai', tags=['openai'])
 
-app.include_router(pipelines.router, prefix="/api/v1/pipelines", tags=["pipelines"])
-app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
-app.include_router(images.router, prefix="/api/v1/images", tags=["images"])
+app.include_router(pipelines.router, prefix='/api/v1/pipelines', tags=['pipelines'])
+app.include_router(tasks.router, prefix='/api/v1/tasks', tags=['tasks'])
+app.include_router(images.router, prefix='/api/v1/images', tags=['images'])
 
 app.include_router(audio.router, prefix='/api/v1/audio', tags=['audio'])
 app.include_router(retrieval.router, prefix='/api/v1/retrieval', tags=['retrieval'])
@@ -1556,7 +1544,7 @@ app.include_router(configs.router, prefix='/api/v1/configs', tags=['configs'])
 app.include_router(auths.router, prefix='/api/v1/auths', tags=['auths'])
 app.include_router(users.router, prefix='/api/v1/users', tags=['users'])
 
-app.include_router(credit.router, prefix="/api/v1/credit", tags=["credit"])
+app.include_router(credit.router, prefix='/api/v1/credit', tags=['credit'])
 
 app.include_router(channels.router, prefix='/api/v1/channels', tags=['channels'])
 app.include_router(chats.router, prefix='/api/v1/chats', tags=['chats'])
@@ -1608,20 +1596,18 @@ if audit_level != AuditLevel.NONE:
 ##################################
 
 
-@app.get("/api/models")
-@app.get("/api/v1/models")  # Experimental: Compatibility with OpenAI API
-async def get_models(
-    request: Request, refresh: bool = False, user=Depends(get_verified_user)
-):
+@app.get('/api/models')
+@app.get('/api/v1/models')  # Experimental: Compatibility with OpenAI API
+async def get_models(request: Request, refresh: bool = False, user=Depends(get_verified_user)):
     def change_preset_model_price(models: list[dict]):
         for model in models:
-            base_model_id = model.get("info", {}).get("base_model_id")
+            base_model_id = model.get('info', {}).get('base_model_id')
             if not base_model_id:
                 continue
-            base_model = Models.get_model_by_id(model["info"]["base_model_id"])
+            base_model = Models.get_model_by_id(model['info']['base_model_id'])
             if not base_model:
                 continue
-            model["info"]["price"] = base_model.price
+            model['info']['price'] = base_model.price
         return models
 
     all_models = await get_all_models(request, refresh=refresh, user=user)
@@ -1665,7 +1651,7 @@ async def get_models(
     log.debug(
         f'/api/models returned filtered models accessible to the user: {json.dumps([model.get("id") for model in models])}'
     )
-    return {"data": change_preset_model_price(models)}
+    return {'data': change_preset_model_price(models)}
 
 
 @app.get('/api/models/base')
@@ -1853,13 +1839,9 @@ async def chat_completion(
 
     async def process_chat(request, form_data, user, metadata, model):
         try:
-            form_data["metadata"]["features_for_credit"] = form_data["metadata"][
-                "features"
-            ]
+            form_data['metadata']['features_for_credit'] = form_data['metadata']['features']
 
-            form_data, metadata, events = await process_chat_payload(
-                request, form_data, user, metadata, model
-            )
+            form_data, metadata, events = await process_chat_payload(request, form_data, user, metadata, model)
 
             response = await chat_completion_handler(request, form_data, user)
             if metadata.get('chat_id') and metadata.get('message_id'):
@@ -2118,30 +2100,25 @@ async def get_app_config(request: Request):
         onboarding = user_count == 0
 
     return {
-        **({"onboarding": True} if onboarding else {}),
-        "status": True,
-        "name": app.state.WEBUI_NAME,
-        "version": VERSION,
-        "default_locale": str(DEFAULT_LOCALE),
-        "oauth": {
-            "providers": {
-                name: config.get("name", name)
-                for name, config in OAUTH_PROVIDERS.items()
-            }
-        },
-        "features": {
-            "auth": WEBUI_AUTH,
-            "auth_trusted_header": bool(app.state.AUTH_TRUSTED_EMAIL_HEADER),
-            "enable_signup_password_confirmation": ENABLE_SIGNUP_PASSWORD_CONFIRMATION,
-            "enable_ldap": app.state.config.ENABLE_LDAP,
-            "enable_api_keys": app.state.config.ENABLE_API_KEYS,
-            "enable_signup": app.state.config.ENABLE_SIGNUP,
-            "enable_login_form": app.state.config.ENABLE_LOGIN_FORM,
-            "enable_signup_verify": app.state.config.ENABLE_SIGNUP_VERIFY,
-            "enable_websocket": ENABLE_WEBSOCKET_SUPPORT,
-            "enable_version_update_check": ENABLE_VERSION_UPDATE_CHECK,
-            "enable_public_active_users_count": ENABLE_PUBLIC_ACTIVE_USERS_COUNT,
-            "enable_easter_eggs": ENABLE_EASTER_EGGS,
+        **({'onboarding': True} if onboarding else {}),
+        'status': True,
+        'name': app.state.WEBUI_NAME,
+        'version': VERSION,
+        'default_locale': str(DEFAULT_LOCALE),
+        'oauth': {'providers': {name: config.get('name', name) for name, config in OAUTH_PROVIDERS.items()}},
+        'features': {
+            'auth': WEBUI_AUTH,
+            'auth_trusted_header': bool(app.state.AUTH_TRUSTED_EMAIL_HEADER),
+            'enable_signup_password_confirmation': ENABLE_SIGNUP_PASSWORD_CONFIRMATION,
+            'enable_ldap': app.state.config.ENABLE_LDAP,
+            'enable_api_keys': app.state.config.ENABLE_API_KEYS,
+            'enable_signup': app.state.config.ENABLE_SIGNUP,
+            'enable_login_form': app.state.config.ENABLE_LOGIN_FORM,
+            'enable_signup_verify': app.state.config.ENABLE_SIGNUP_VERIFY,
+            'enable_websocket': ENABLE_WEBSOCKET_SUPPORT,
+            'enable_version_update_check': ENABLE_VERSION_UPDATE_CHECK,
+            'enable_public_active_users_count': ENABLE_PUBLIC_ACTIVE_USERS_COUNT,
+            'enable_easter_eggs': ENABLE_EASTER_EGGS,
             **(
                 {
                     'enable_direct_connections': app.state.config.ENABLE_DIRECT_CONNECTIONS,
@@ -2177,10 +2154,10 @@ async def get_app_config(request: Request):
                 else {}
             ),
         },
-        "ui": {
-            "pending_user_overlay_title": app.state.config.PENDING_USER_OVERLAY_TITLE,
-            "pending_user_overlay_content": app.state.config.PENDING_USER_OVERLAY_CONTENT,
-            "response_watermark": app.state.config.RESPONSE_WATERMARK,
+        'ui': {
+            'pending_user_overlay_title': app.state.config.PENDING_USER_OVERLAY_TITLE,
+            'pending_user_overlay_content': app.state.config.PENDING_USER_OVERLAY_CONTENT,
+            'response_watermark': app.state.config.RESPONSE_WATERMARK,
         },
         **(
             {
@@ -2297,7 +2274,7 @@ async def get_app_latest_release_version(user=Depends(get_verified_user)):
         timeout = aiohttp.ClientTimeout(total=1)
         async with aiohttp.ClientSession(timeout=timeout, trust_env=True) as session:
             async with session.get(
-                "https://api.github.com/repos/ovinc-cn/openwebui/releases/latest",
+                'https://api.github.com/repos/ovinc-cn/openwebui/releases/latest',
                 ssl=AIOHTTP_CLIENT_SESSION_SSL,
             ) as response:
                 response.raise_for_status()

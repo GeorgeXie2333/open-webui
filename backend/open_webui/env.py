@@ -178,14 +178,12 @@ def parse_section(section):
 
 
 try:
-    changelog_path = BASE_DIR / "CHANGELOG_EXTRA.md"
-    with open(str(changelog_path.absolute()), "r", encoding="utf8") as file:
+    changelog_path = BASE_DIR / 'CHANGELOG_EXTRA.md'
+    with open(str(changelog_path.absolute()), 'r', encoding='utf8') as file:
         changelog_content = file.read()
 
 except Exception:
-    changelog_content = (
-        pkgutil.get_data("open_webui", "CHANGELOG_EXTRA.md") or b""
-    ).decode()
+    changelog_content = (pkgutil.get_data('open_webui', 'CHANGELOG_EXTRA.md') or b'').decode()
 
 # Convert markdown content to HTML
 html_content = markdown.markdown(changelog_content)
@@ -762,9 +760,7 @@ AIOHTTP_CLIENT_SESSION_TOOL_SERVER_SSL = (
     os.environ.get('AIOHTTP_CLIENT_SESSION_TOOL_SERVER_SSL', 'True').lower() == 'true'
 )
 
-AIOHTTP_CLIENT_READ_BUFFER_SIZE = int(
-    os.environ.get("AIOHTTP_CLIENT_READ_BUFFER_SIZE", 2**16)
-)
+AIOHTTP_CLIENT_READ_BUFFER_SIZE = int(os.environ.get('AIOHTTP_CLIENT_READ_BUFFER_SIZE', 2**16))
 
 AIOHTTP_CLIENT_TIMEOUT_TOOL_SERVER = os.environ.get('AIOHTTP_CLIENT_TIMEOUT_TOOL_SERVER', '')
 

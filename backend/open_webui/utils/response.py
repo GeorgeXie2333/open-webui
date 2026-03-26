@@ -146,17 +146,17 @@ async def convert_streaming_response_ollama_to_openai(ollama_streaming_response)
         async for data in ollama_streaming_response.body_iterator:
             data = json.loads(data)
 
-            model = data.get("model", "ollama")
-            message_content = data.get("message", {}).get("content", None)
-            reasoning_content = data.get("message", {}).get("thinking", None)
-            tool_calls = data.get("message", {}).get("tool_calls", None)
+            model = data.get('model', 'ollama')
+            message_content = data.get('message', {}).get('content', None)
+            reasoning_content = data.get('message', {}).get('thinking', None)
+            tool_calls = data.get('message', {}).get('tool_calls', None)
             openai_tool_calls = None
 
             if tool_calls:
                 openai_tool_calls = convert_ollama_tool_call_to_openai(tool_calls)
                 has_tool_calls = True
 
-            done = data.get("done", False)
+            done = data.get('done', False)
 
             usage = None
             if done:
@@ -167,15 +167,15 @@ async def convert_streaming_response_ollama_to_openai(ollama_streaming_response)
             )
 
             if done and has_tool_calls:
-                data["choices"][0]["finish_reason"] = "tool_calls"
+                data['choices'][0]['finish_reason'] = 'tool_calls'
 
-            line = f"data: {json.dumps(data)}\n\n"
+            line = f'data: {json.dumps(data)}\n\n'
             credit_deduct.run(line)
             yield line
 
         yield credit_deduct.usage_message
 
-    yield "data: [DONE]\n\n"
+    yield 'data: [DONE]\n\n'
 
 
 def convert_embedding_response_ollama_to_openai(response) -> dict:

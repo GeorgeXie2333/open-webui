@@ -909,9 +909,7 @@ async def cleanup_response(
         await session.close()
 
 
-async def stream_wrapper(
-    user, model_id, form_data, response, session, content_handler=None
-):
+async def stream_wrapper(user, model_id, form_data, response, session, content_handler=None):
     """
     Wrap a stream to ensure cleanup happens even if streaming is interrupted.
     This is more reliable than BackgroundTask which may not run if client disconnects.
@@ -919,9 +917,7 @@ async def stream_wrapper(
     from open_webui.utils.credit.usage import CreditDeduct
 
     try:
-        stream = (
-            content_handler(response.content) if content_handler else response.content
-        )
+        stream = content_handler(response.content) if content_handler else response.content
         with CreditDeduct(
             user=user,
             model_id=model_id,

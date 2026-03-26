@@ -760,15 +760,17 @@ def get_azure_allowed_params(api_version: str) -> set[str]:
 
     return allowed_params
 
+
 o_series_regexp = re.compile(r'^o\d+')
 gpt_series_regexp = re.compile(r'^gpt-(\d+)')
+
 
 def is_openai_new_model(model: str) -> bool:
     try:
         # split / for openrouter.ai models
         # split . for pipe models
         model_lower = model.lower()
-        real_model_name = (model_lower.split("/", 1)[-1]).split(".", 1)[-1]
+        real_model_name = (model_lower.split('/', 1)[-1]).split('.', 1)[-1]
 
         # o-series models (o1, o3, o4, o5, ...)
         if o_series_regexp.match(model_lower) or o_series_regexp.match(real_model_name):
@@ -782,7 +784,7 @@ def is_openai_new_model(model: str) -> bool:
         if m and int(m.group(1)) >= 5:
             return True
     except Exception as err:
-        log.error("check openai new model failed: %s", err)
+        log.error('check openai new model failed: %s', err)
     return False
 
 
@@ -1202,13 +1204,10 @@ async def generate_chat_completion(
         )
 
         # Check if response is SSE
-        if "text/event-stream" in r.headers.get("Content-Type", ""):
-
+        if 'text/event-stream' in r.headers.get('Content-Type', ''):
             streaming = True
             return StreamingResponse(
-                stream_wrapper(
-                    user, model_id, form_data, r, session, stream_chunks_handler
-                ),
+                stream_wrapper(user, model_id, form_data, r, session, stream_chunks_handler),
                 status_code=r.status,
                 headers=dict(r.headers),
             )
@@ -1304,18 +1303,16 @@ async def embeddings(request: Request, form_data: dict, user):
             cookies=cookies,
         )
 
-        if "text/event-stream" in r.headers.get("Content-Type", ""):
+        if 'text/event-stream' in r.headers.get('Content-Type', ''):
             if user:
                 with CreditDeduct(
                     user=user,
                     model_id=model_id,
-                    body={
-                        "messages": [{"role": "user", "content": form_data["input"]}]
-                    },
+                    body={'messages': [{'role': 'user', 'content': form_data['input']}]},
                     is_stream=False,
                     is_embedding=True,
                 ) as credit_deduct:
-                    credit_deduct.run(form_data["input"])
+                    credit_deduct.run(form_data['input'])
             streaming = True
             return StreamingResponse(
                 stream_wrapper(user, model_id, form_data, r, session),
@@ -1338,19 +1335,17 @@ async def embeddings(request: Request, form_data: dict, user):
                 with CreditDeduct(
                     user=user,
                     model_id=model_id,
-                    body={
-                        "messages": [{"role": "user", "content": form_data["input"]}]
-                    },
+                    body={'messages': [{'role': 'user', 'content': form_data['input']}]},
                     is_stream=False,
                     is_embedding=True,
                 ) as credit_deduct:
-                    if "usage" in response_data:
+                    if 'usage' in response_data:
                         credit_deduct.is_official_usage = True
-                        prompt_tokens = response_data["usage"]["prompt_tokens"]
+                        prompt_tokens = response_data['usage']['prompt_tokens']
                         credit_deduct.usage.prompt_tokens = prompt_tokens
                         credit_deduct.usage.total_tokens = prompt_tokens
                     else:
-                        credit_deduct.run(form_data["input"])
+                        credit_deduct.run(form_data['input'])
 
             return response_data
     except Exception as e:

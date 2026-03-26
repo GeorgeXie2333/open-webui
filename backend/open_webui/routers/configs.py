@@ -578,19 +578,19 @@ async def get_banners(
 
 class UsageConfigForm(BaseModel):
     CREDIT_NO_CHARGE_EMPTY_RESPONSE: bool = Field(default=False)
-    CREDIT_NO_CREDIT_MSG: str = Field(default="余额不足，请前往 设置-积分 充值")
+    CREDIT_NO_CREDIT_MSG: str = Field(default='余额不足，请前往 设置-积分 充值')
     CREDIT_EXCHANGE_RATIO: float = Field(default=1, gt=0)
     CREDIT_DEFAULT_CREDIT: float = Field(default=0, ge=0)
-    USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE: str = Field(default="")
-    USAGE_DEFAULT_ENCODING_MODEL: str = Field(default="gpt-4o")
+    USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE: str = Field(default='')
+    USAGE_DEFAULT_ENCODING_MODEL: str = Field(default='gpt-4o')
     USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE: float = Field(default=0, ge=0)
     USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE: float = Field(default=0, ge=0)
     USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE: float = Field(default=0, ge=0)
     USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE: float = Field(default=0, ge=0)
     USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE: float = Field(default=0, ge=0)
     USAGE_CALCULATE_MINIMUM_COST: float = Field(default=0, ge=0)
-    USAGE_CUSTOM_PRICE_CONFIG: str = Field(default="[]")
-    EZFP_PAY_PRIORITY: Literal["qrcode", "link"] = Field(default="qrcode")
+    USAGE_CUSTOM_PRICE_CONFIG: str = Field(default='[]')
+    EZFP_PAY_PRIORITY: Literal['qrcode', 'link'] = Field(default='qrcode')
     EZFP_ENDPOINT: Optional[str] = None
     EZFP_PID: Optional[str] = None
     EZFP_KEY: Optional[str] = None
@@ -605,60 +605,48 @@ class UsageConfigForm(BaseModel):
     ALIPAY_PRODUCT_CODE: Optional[str] = None
 
 
-@router.get("/usage", response_model=UsageConfigForm)
+@router.get('/usage', response_model=UsageConfigForm)
 async def get_usage_config(request: Request, _=Depends(get_admin_user)):
     return {
-        "CREDIT_NO_CHARGE_EMPTY_RESPONSE": request.app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE,
-        "CREDIT_NO_CREDIT_MSG": request.app.state.config.CREDIT_NO_CREDIT_MSG,
-        "CREDIT_EXCHANGE_RATIO": request.app.state.config.CREDIT_EXCHANGE_RATIO,
-        "CREDIT_DEFAULT_CREDIT": request.app.state.config.CREDIT_DEFAULT_CREDIT,
-        "USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE": request.app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE,
-        "USAGE_DEFAULT_ENCODING_MODEL": request.app.state.config.USAGE_DEFAULT_ENCODING_MODEL,
-        "USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE": request.app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE,
-        "USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE,
-        "USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE,
-        "USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE,
-        "USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE,
-        "USAGE_CALCULATE_MINIMUM_COST": request.app.state.config.USAGE_CALCULATE_MINIMUM_COST,
-        "USAGE_CUSTOM_PRICE_CONFIG": request.app.state.config.USAGE_CUSTOM_PRICE_CONFIG,
-        "EZFP_PAY_PRIORITY": request.app.state.config.EZFP_PAY_PRIORITY,
-        "EZFP_ENDPOINT": request.app.state.config.EZFP_ENDPOINT,
-        "EZFP_PID": request.app.state.config.EZFP_PID,
-        "EZFP_KEY": request.app.state.config.EZFP_KEY,
-        "EZFP_CALLBACK_HOST": request.app.state.config.EZFP_CALLBACK_HOST,
-        "EZFP_AMOUNT_CONTROL": request.app.state.config.EZFP_AMOUNT_CONTROL,
-        "ALIPAY_SERVER_URL": request.app.state.config.ALIPAY_SERVER_URL,
-        "ALIPAY_APP_ID": request.app.state.config.ALIPAY_APP_ID,
-        "ALIPAY_APP_PRIVATE_KEY": request.app.state.config.ALIPAY_APP_PRIVATE_KEY,
-        "ALIPAY_ALIPAY_PUBLIC_KEY": request.app.state.config.ALIPAY_ALIPAY_PUBLIC_KEY,
-        "ALIPAY_CALLBACK_HOST": request.app.state.config.ALIPAY_CALLBACK_HOST,
-        "ALIPAY_AMOUNT_CONTROL": request.app.state.config.ALIPAY_AMOUNT_CONTROL,
-        "ALIPAY_PRODUCT_CODE": request.app.state.config.ALIPAY_PRODUCT_CODE,
+        'CREDIT_NO_CHARGE_EMPTY_RESPONSE': request.app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE,
+        'CREDIT_NO_CREDIT_MSG': request.app.state.config.CREDIT_NO_CREDIT_MSG,
+        'CREDIT_EXCHANGE_RATIO': request.app.state.config.CREDIT_EXCHANGE_RATIO,
+        'CREDIT_DEFAULT_CREDIT': request.app.state.config.CREDIT_DEFAULT_CREDIT,
+        'USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE': request.app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE,
+        'USAGE_DEFAULT_ENCODING_MODEL': request.app.state.config.USAGE_DEFAULT_ENCODING_MODEL,
+        'USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE': request.app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE,
+        'USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE,
+        'USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE,
+        'USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE,
+        'USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE,
+        'USAGE_CALCULATE_MINIMUM_COST': request.app.state.config.USAGE_CALCULATE_MINIMUM_COST,
+        'USAGE_CUSTOM_PRICE_CONFIG': request.app.state.config.USAGE_CUSTOM_PRICE_CONFIG,
+        'EZFP_PAY_PRIORITY': request.app.state.config.EZFP_PAY_PRIORITY,
+        'EZFP_ENDPOINT': request.app.state.config.EZFP_ENDPOINT,
+        'EZFP_PID': request.app.state.config.EZFP_PID,
+        'EZFP_KEY': request.app.state.config.EZFP_KEY,
+        'EZFP_CALLBACK_HOST': request.app.state.config.EZFP_CALLBACK_HOST,
+        'EZFP_AMOUNT_CONTROL': request.app.state.config.EZFP_AMOUNT_CONTROL,
+        'ALIPAY_SERVER_URL': request.app.state.config.ALIPAY_SERVER_URL,
+        'ALIPAY_APP_ID': request.app.state.config.ALIPAY_APP_ID,
+        'ALIPAY_APP_PRIVATE_KEY': request.app.state.config.ALIPAY_APP_PRIVATE_KEY,
+        'ALIPAY_ALIPAY_PUBLIC_KEY': request.app.state.config.ALIPAY_ALIPAY_PUBLIC_KEY,
+        'ALIPAY_CALLBACK_HOST': request.app.state.config.ALIPAY_CALLBACK_HOST,
+        'ALIPAY_AMOUNT_CONTROL': request.app.state.config.ALIPAY_AMOUNT_CONTROL,
+        'ALIPAY_PRODUCT_CODE': request.app.state.config.ALIPAY_PRODUCT_CODE,
     }
 
 
-@router.post("/usage", response_model=UsageConfigForm)
-async def set_usage_config(
-    request: Request, form_data: UsageConfigForm, _=Depends(get_admin_user)
-):
-    request.app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE = (
-        form_data.CREDIT_NO_CHARGE_EMPTY_RESPONSE
-    )
+@router.post('/usage', response_model=UsageConfigForm)
+async def set_usage_config(request: Request, form_data: UsageConfigForm, _=Depends(get_admin_user)):
+    request.app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE = form_data.CREDIT_NO_CHARGE_EMPTY_RESPONSE
     request.app.state.config.CREDIT_NO_CREDIT_MSG = form_data.CREDIT_NO_CREDIT_MSG
     request.app.state.config.CREDIT_EXCHANGE_RATIO = form_data.CREDIT_EXCHANGE_RATIO
     request.app.state.config.CREDIT_DEFAULT_CREDIT = form_data.CREDIT_DEFAULT_CREDIT
-    request.app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE = (
-        form_data.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE
-    )
-    request.app.state.config.USAGE_DEFAULT_ENCODING_MODEL = (
-        form_data.USAGE_DEFAULT_ENCODING_MODEL
-    )
-    request.app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE = (
-        form_data.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE
-    )
-    request.app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE = (
-        form_data.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE
-    )
+    request.app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE = form_data.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE
+    request.app.state.config.USAGE_DEFAULT_ENCODING_MODEL = form_data.USAGE_DEFAULT_ENCODING_MODEL
+    request.app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE = form_data.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE
+    request.app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE = form_data.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE
     request.app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE = (
         form_data.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE
     )
@@ -668,12 +656,8 @@ async def set_usage_config(
     request.app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE = (
         form_data.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE
     )
-    request.app.state.config.USAGE_CALCULATE_MINIMUM_COST = (
-        form_data.USAGE_CALCULATE_MINIMUM_COST
-    )
-    request.app.state.config.USAGE_CUSTOM_PRICE_CONFIG = (
-        form_data.USAGE_CUSTOM_PRICE_CONFIG
-    )
+    request.app.state.config.USAGE_CALCULATE_MINIMUM_COST = form_data.USAGE_CALCULATE_MINIMUM_COST
+    request.app.state.config.USAGE_CUSTOM_PRICE_CONFIG = form_data.USAGE_CUSTOM_PRICE_CONFIG
     request.app.state.config.EZFP_PAY_PRIORITY = form_data.EZFP_PAY_PRIORITY
     request.app.state.config.EZFP_ENDPOINT = form_data.EZFP_ENDPOINT
     request.app.state.config.EZFP_PID = form_data.EZFP_PID
@@ -683,38 +667,36 @@ async def set_usage_config(
     request.app.state.config.ALIPAY_SERVER_URL = form_data.ALIPAY_SERVER_URL
     request.app.state.config.ALIPAY_APP_ID = form_data.ALIPAY_APP_ID
     request.app.state.config.ALIPAY_APP_PRIVATE_KEY = form_data.ALIPAY_APP_PRIVATE_KEY
-    request.app.state.config.ALIPAY_ALIPAY_PUBLIC_KEY = (
-        form_data.ALIPAY_ALIPAY_PUBLIC_KEY
-    )
+    request.app.state.config.ALIPAY_ALIPAY_PUBLIC_KEY = form_data.ALIPAY_ALIPAY_PUBLIC_KEY
     request.app.state.config.ALIPAY_CALLBACK_HOST = form_data.ALIPAY_CALLBACK_HOST
     request.app.state.config.ALIPAY_AMOUNT_CONTROL = form_data.ALIPAY_AMOUNT_CONTROL
     request.app.state.config.ALIPAY_PRODUCT_CODE = form_data.ALIPAY_PRODUCT_CODE
 
     return {
-        "CREDIT_NO_CHARGE_EMPTY_RESPONSE": request.app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE,
-        "CREDIT_NO_CREDIT_MSG": request.app.state.config.CREDIT_NO_CREDIT_MSG,
-        "CREDIT_EXCHANGE_RATIO": request.app.state.config.CREDIT_EXCHANGE_RATIO,
-        "CREDIT_DEFAULT_CREDIT": request.app.state.config.CREDIT_DEFAULT_CREDIT,
-        "USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE": request.app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE,
-        "USAGE_DEFAULT_ENCODING_MODEL": request.app.state.config.USAGE_DEFAULT_ENCODING_MODEL,
-        "USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE": request.app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE,
-        "USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE,
-        "USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE,
-        "USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE,
-        "USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE": request.app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE,
-        "USAGE_CALCULATE_MINIMUM_COST": request.app.state.config.USAGE_CALCULATE_MINIMUM_COST,
-        "USAGE_CUSTOM_PRICE_CONFIG": request.app.state.config.USAGE_CUSTOM_PRICE_CONFIG,
-        "EZFP_PAY_PRIORITY": request.app.state.config.EZFP_PAY_PRIORITY,
-        "EZFP_ENDPOINT": request.app.state.config.EZFP_ENDPOINT,
-        "EZFP_PID": request.app.state.config.EZFP_PID,
-        "EZFP_KEY": request.app.state.config.EZFP_KEY,
-        "EZFP_CALLBACK_HOST": request.app.state.config.EZFP_CALLBACK_HOST,
-        "EZFP_AMOUNT_CONTROL": request.app.state.config.EZFP_AMOUNT_CONTROL,
-        "ALIPAY_SERVER_URL": request.app.state.config.ALIPAY_SERVER_URL,
-        "ALIPAY_APP_ID": request.app.state.config.ALIPAY_APP_ID,
-        "ALIPAY_APP_PRIVATE_KEY": request.app.state.config.ALIPAY_APP_PRIVATE_KEY,
-        "ALIPAY_ALIPAY_PUBLIC_KEY": request.app.state.config.ALIPAY_ALIPAY_PUBLIC_KEY,
-        "ALIPAY_CALLBACK_HOST": request.app.state.config.ALIPAY_CALLBACK_HOST,
-        "ALIPAY_AMOUNT_CONTROL": request.app.state.config.ALIPAY_AMOUNT_CONTROL,
-        "ALIPAY_PRODUCT_CODE": request.app.state.config.ALIPAY_PRODUCT_CODE,
+        'CREDIT_NO_CHARGE_EMPTY_RESPONSE': request.app.state.config.CREDIT_NO_CHARGE_EMPTY_RESPONSE,
+        'CREDIT_NO_CREDIT_MSG': request.app.state.config.CREDIT_NO_CREDIT_MSG,
+        'CREDIT_EXCHANGE_RATIO': request.app.state.config.CREDIT_EXCHANGE_RATIO,
+        'CREDIT_DEFAULT_CREDIT': request.app.state.config.CREDIT_DEFAULT_CREDIT,
+        'USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE': request.app.state.config.USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE,
+        'USAGE_DEFAULT_ENCODING_MODEL': request.app.state.config.USAGE_DEFAULT_ENCODING_MODEL,
+        'USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE': request.app.state.config.USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE,
+        'USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE,
+        'USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE,
+        'USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE,
+        'USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE': request.app.state.config.USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE,
+        'USAGE_CALCULATE_MINIMUM_COST': request.app.state.config.USAGE_CALCULATE_MINIMUM_COST,
+        'USAGE_CUSTOM_PRICE_CONFIG': request.app.state.config.USAGE_CUSTOM_PRICE_CONFIG,
+        'EZFP_PAY_PRIORITY': request.app.state.config.EZFP_PAY_PRIORITY,
+        'EZFP_ENDPOINT': request.app.state.config.EZFP_ENDPOINT,
+        'EZFP_PID': request.app.state.config.EZFP_PID,
+        'EZFP_KEY': request.app.state.config.EZFP_KEY,
+        'EZFP_CALLBACK_HOST': request.app.state.config.EZFP_CALLBACK_HOST,
+        'EZFP_AMOUNT_CONTROL': request.app.state.config.EZFP_AMOUNT_CONTROL,
+        'ALIPAY_SERVER_URL': request.app.state.config.ALIPAY_SERVER_URL,
+        'ALIPAY_APP_ID': request.app.state.config.ALIPAY_APP_ID,
+        'ALIPAY_APP_PRIVATE_KEY': request.app.state.config.ALIPAY_APP_PRIVATE_KEY,
+        'ALIPAY_ALIPAY_PUBLIC_KEY': request.app.state.config.ALIPAY_ALIPAY_PUBLIC_KEY,
+        'ALIPAY_CALLBACK_HOST': request.app.state.config.ALIPAY_CALLBACK_HOST,
+        'ALIPAY_AMOUNT_CONTROL': request.app.state.config.ALIPAY_AMOUNT_CONTROL,
+        'ALIPAY_PRODUCT_CODE': request.app.state.config.ALIPAY_PRODUCT_CODE,
     }

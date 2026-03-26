@@ -88,89 +88,57 @@ def override_static(path: str, content: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     r = requests.get(content, stream=True)
-    with open(path, "wb") as f:
+    with open(path, 'wb') as f:
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, f)
 
 
 def get_license_data(app, key):
     payload = {
-        "resources": {
-            os.path.join(STATIC_DIR, "logo.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "favicon.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "favicon.svg"): os.getenv("CUSTOM_SVG", ""),
-            os.path.join(STATIC_DIR, "favicon-96x96.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "apple-touch-icon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "web-app-manifest-192x192.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "web-app-manifest-512x512.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "splash.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "favicon.ico"): os.getenv("CUSTOM_ICO", ""),
-            os.path.join(STATIC_DIR, "favicon-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "splash-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "favicon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon.svg"): os.getenv(
-                "CUSTOM_SVG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon-96x96.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/apple-touch-icon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(
-                FRONTEND_BUILD_DIR, "static/web-app-manifest-192x192.png"
-            ): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(
-                FRONTEND_BUILD_DIR, "static/web-app-manifest-512x512.png"
-            ): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(FRONTEND_BUILD_DIR, "static/splash.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon.ico"): os.getenv(
-                "CUSTOM_ICO", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/splash-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
+        'resources': {
+            os.path.join(STATIC_DIR, 'logo.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'favicon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'favicon.svg'): os.getenv('CUSTOM_SVG', ''),
+            os.path.join(STATIC_DIR, 'favicon-96x96.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'apple-touch-icon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'web-app-manifest-192x192.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'web-app-manifest-512x512.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'splash.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'favicon.ico'): os.getenv('CUSTOM_ICO', ''),
+            os.path.join(STATIC_DIR, 'favicon-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
+            os.path.join(STATIC_DIR, 'splash-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'favicon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon.svg'): os.getenv('CUSTOM_SVG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon-96x96.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/apple-touch-icon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/web-app-manifest-192x192.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/web-app-manifest-512x512.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/splash.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon.ico'): os.getenv('CUSTOM_ICO', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/splash-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
         },
-        "metadata": {
-            "type": "enterprise",
-            "organization_name": os.getenv("ORGANIZATION_NAME", "OpenWebui"),
+        'metadata': {
+            'type': 'enterprise',
+            'organization_name': os.getenv('ORGANIZATION_NAME', 'OpenWebui'),
         },
     }
     try:
         for k, v in payload.items():
-            if k == "resources":
+            if k == 'resources':
                 for p, c in v.items():
                     if c:
-                        globals().get("override_static", lambda a, b: None)(p, c)
-            elif k == "count":
-                setattr(app.state, "USER_COUNT", v)
-            elif k == "name":
-                setattr(app.state, "WEBUI_NAME", v)
-            elif k == "metadata":
-                setattr(app.state, "LICENSE_METADATA", v)
+                        globals().get('override_static', lambda a, b: None)(p, c)
+            elif k == 'count':
+                setattr(app.state, 'USER_COUNT', v)
+            elif k == 'name':
+                setattr(app.state, 'WEBUI_NAME', v)
+            elif k == 'metadata':
+                setattr(app.state, 'LICENSE_METADATA', v)
         return True
     except Exception as ex:
-        log.exception(f"License: Uncaught Exception: {ex}")
+        log.exception(f'License: Uncaught Exception: {ex}')
 
     return True
 
@@ -642,34 +610,29 @@ verify_email_template = """<!DOCTYPE html>
 
 
 def get_email_code_key(code: str) -> str:
-    return f"email_verify:{code}"
+    return f'email_verify:{code}'
 
 
 def send_verify_email(email: str):
     redis = get_redis_connection(
         redis_url=REDIS_URL,
-        redis_sentinels=get_sentinels_from_env(
-            REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT
-        ),
+        redis_sentinels=get_sentinels_from_env(REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT),
         redis_cluster=REDIS_CLUSTER,
     )
-    code = f"{uuid.uuid4().hex}{uuid.uuid1().hex}"
+    code = f'{uuid.uuid4().hex}{uuid.uuid1().hex}'
     redis.set(name=get_email_code_key(code=code), value=email, ex=timedelta(days=1))
-    link = f"{WEBUI_URL.value.rstrip('/')}/api/v1/auths/signup_verify/{code}"
+    link = f'{WEBUI_URL.value.rstrip("/")}/api/v1/auths/signup_verify/{code}'
     send_email(
         receiver=email,
-        subject=f"{WEBUI_NAME} Email Verify",
-        body=verify_email_template
-        % {"title": f"{WEBUI_NAME} Email Verify", "link": link},
+        subject=f'{WEBUI_NAME} Email Verify',
+        body=verify_email_template % {'title': f'{WEBUI_NAME} Email Verify', 'link': link},
     )
 
 
 def verify_email_by_code(code: str) -> str:
     redis = get_redis_connection(
         redis_url=REDIS_URL,
-        redis_sentinels=get_sentinels_from_env(
-            REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT
-        ),
+        redis_sentinels=get_sentinels_from_env(REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT),
         redis_cluster=REDIS_CLUSTER,
     )
     return redis.get(name=get_email_code_key(code=code))

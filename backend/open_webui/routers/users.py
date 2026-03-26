@@ -98,13 +98,11 @@ async def get_users(
     user_groups = Groups.get_groups_by_member_ids(user_ids, db=db)
 
     credit_map = {
-        credit.user_id: {"credit": "%.4f" % credit.credit}
-        for credit in Credits.list_credits_by_user_id(
-            user_ids=(user.id for user in users)
-        )
+        credit.user_id: {'credit': '%.4f' % credit.credit}
+        for credit in Credits.list_credits_by_user_id(user_ids=(user.id for user in users))
     }
     for user in users:
-        setattr(user, "credit", credit_map.get(user.id, {}).get("credit", 0))
+        setattr(user, 'credit', credit_map.get(user.id, {}).get('credit', 0))
 
     return {
         'users': [
@@ -126,15 +124,13 @@ async def get_all_users(
     db: Session = Depends(get_session),
 ):
     user_data = Users.get_users(db=db)
-    users = user_data["users"]
+    users = user_data['users']
     credit_map = {
-        credit.user_id: {"credit": "%.4f" % credit.credit}
-        for credit in Credits.list_credits_by_user_id(
-            user_ids=(user.id for user in users)
-        )
+        credit.user_id: {'credit': '%.4f' % credit.credit}
+        for credit in Credits.list_credits_by_user_id(user_ids=(user.id for user in users))
     }
     for user in users:
-        setattr(user, "credit", credit_map.get(user.id, {}).get("credit", 0))
+        setattr(user, 'credit', credit_map.get(user.id, {}).get('credit', 0))
     return user_data
 
 
@@ -653,12 +649,12 @@ async def update_user_by_id(
                     credit=Decimal(form_data.credit),
                     detail=SetCreditFormDetail(
                         api_path=str(request.url),
-                        api_params={"credit": form_data.credit},
-                        desc=f"updated by {session_user.name}",
+                        api_params={'credit': form_data.credit},
+                        desc=f'updated by {session_user.name}',
                     ),
                 )
             )
-            setattr(updated_user, "credit", "%.4f" % credit.credit)
+            setattr(updated_user, 'credit', '%.4f' % credit.credit)
 
         if updated_user:
             return updated_user
@@ -679,7 +675,7 @@ async def update_user_by_id(
 ############################
 
 
-@router.put("/{user_id}/credit", response_model=Optional[UserModel])
+@router.put('/{user_id}/credit', response_model=Optional[UserModel])
 async def update_credit_by_user_id(
     request: Request,
     user_id: str,
@@ -696,23 +692,23 @@ async def update_credit_by_user_id(
     if form_data.amount is None and form_data.credit is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="amount or credit must be specified",
+            detail='amount or credit must be specified',
         )
 
     params = {
-        "user_id": user_id,
-        "detail": SetCreditFormDetail(
+        'user_id': user_id,
+        'detail': SetCreditFormDetail(
             api_path=str(request.url),
             api_params=form_data.model_dump(),
-            desc=f"updated by {session_user.name}",
+            desc=f'updated by {session_user.name}',
         ),
     }
 
     if form_data.credit is not None:
-        params["credit"] = Decimal(form_data.credit)
+        params['credit'] = Decimal(form_data.credit)
         Credits.set_credit_by_user_id(form_data=SetCreditForm(**params))
     elif form_data.amount is not None:
-        params["amount"] = Decimal(form_data.amount)
+        params['amount'] = Decimal(form_data.amount)
         Credits.add_credit_by_user_id(form_data=AddCreditForm(**params))
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)

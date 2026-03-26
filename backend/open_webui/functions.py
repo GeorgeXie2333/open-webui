@@ -287,7 +287,6 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                         body=form_data,
                         is_stream=True,
                     ) as credit_deduct:
-
                         async for data in res.body_iterator:
                             credit_deduct.run(data)
                             yield data
@@ -305,12 +304,12 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                     ) as credit_deduct:
                         credit_deduct.run(res)
                         res = credit_deduct.add_usage_to_resp(res)
-                        yield f"data: {json.dumps(res)}\n\n"
+                        yield f'data: {json.dumps(res)}\n\n'
                     return
 
             except Exception as e:
-                log.error(f"Error: {e}")
-                yield f"data: {json.dumps({'error': {'detail': str(e)}})}\n\n"
+                log.error(f'Error: {e}')
+                yield f'data: {json.dumps({"error": {"detail": str(e)}})}\n\n'
                 return
 
             with CreditDeduct(
@@ -319,13 +318,10 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                 body=form_data,
                 is_stream=True,
             ) as credit_deduct:
-
                 if isinstance(res, str):
-                    message = openai_chat_chunk_message_template(
-                        form_data["model"], res
-                    )
+                    message = openai_chat_chunk_message_template(form_data['model'], res)
                     credit_deduct.run(message)
-                    yield f"data: {json.dumps(message)}\n\n"
+                    yield f'data: {json.dumps(message)}\n\n'
 
                 if isinstance(res, Iterator):
                     for line in res:
@@ -340,16 +336,14 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                         yield line
 
                 if isinstance(res, str) or isinstance(res, Generator):
-                    finish_message = openai_chat_chunk_message_template(
-                        form_data["model"], ""
-                    )
-                    finish_message["choices"][0]["finish_reason"] = "stop"
-                    yield f"data: {json.dumps(finish_message)}\n\n"
-                    yield "data: [DONE]"
+                    finish_message = openai_chat_chunk_message_template(form_data['model'], '')
+                    finish_message['choices'][0]['finish_reason'] = 'stop'
+                    yield f'data: {json.dumps(finish_message)}\n\n'
+                    yield 'data: [DONE]'
 
                 yield credit_deduct.usage_message
 
-        return StreamingResponse(stream_content(), media_type="text/event-stream")
+        return StreamingResponse(stream_content(), media_type='text/event-stream')
     else:
         try:
             res = await execute_pipe(pipe, params)
@@ -365,7 +359,6 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                 body=form_data,
                 is_stream=True,
             ) as credit_deduct:
-
                 async for data in response.body_iterator:
                     credit_deduct.run(data)
                     yield data
@@ -373,7 +366,7 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                 yield credit_deduct.usage_message
 
         if isinstance(res, StreamingResponse):
-            return StreamingResponse(to_stream(res), media_type="text/event-stream")
+            return StreamingResponse(to_stream(res), media_type='text/event-stream')
 
         with CreditDeduct(
             user=user,
@@ -391,6 +384,6 @@ async def generate_function_chat_completion(request, form_data, user, models: di
                 return credit_deduct.add_usage_to_resp(res)
 
             message = await get_message_content(res)
-            res = openai_chat_completion_message_template(form_data["model"], message)
+            res = openai_chat_completion_message_template(form_data['model'], message)
             credit_deduct.run(res)
             return credit_deduct.add_usage_to_resp(res)

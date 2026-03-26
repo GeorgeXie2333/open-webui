@@ -151,10 +151,8 @@ async def update_task_config(request: Request, form_data: TaskConfigForm, user=D
     }
 
 
-@router.post("/title/completions")
-async def generate_title(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/title/completions')
+async def generate_title(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
     if not request.app.state.config.ENABLE_TITLE_GENERATION:
@@ -232,10 +230,8 @@ async def generate_title(
         )
 
 
-@router.post("/follow_up/completions")
-async def generate_follow_ups(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/follow_up/completions')
+async def generate_follow_ups(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
     if not request.app.state.config.ENABLE_FOLLOW_UP_GENERATION:
@@ -304,10 +300,8 @@ async def generate_follow_ups(
         )
 
 
-@router.post("/tags/completions")
-async def generate_chat_tags(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/tags/completions')
+async def generate_chat_tags(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
     if not request.app.state.config.ENABLE_TAGS_GENERATION:
@@ -376,13 +370,11 @@ async def generate_chat_tags(
         )
 
 
-@router.post("/image_prompt/completions")
-async def generate_image_prompt(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/image_prompt/completions')
+async def generate_image_prompt(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
-    if getattr(request.state, "direct", False) and hasattr(request.state, "model"):
+    if getattr(request.state, 'direct', False) and hasattr(request.state, 'model'):
         models = {
             request.state.model['id']: request.state.model,
         }
@@ -442,14 +434,12 @@ async def generate_image_prompt(
         )
 
 
-@router.post("/queries/completions")
-async def generate_queries(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/queries/completions')
+async def generate_queries(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
-    type = form_data.get("type")
-    if type == "web_search":
+    type = form_data.get('type')
+    if type == 'web_search':
         if not request.app.state.config.ENABLE_SEARCH_QUERY_GENERATION:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -525,10 +515,8 @@ async def generate_queries(
         )
 
 
-@router.post("/auto/completions")
-async def generate_autocompletion(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/auto/completions')
+async def generate_autocompletion(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
     if not request.app.state.config.ENABLE_AUTOCOMPLETE_GENERATION:
@@ -608,13 +596,11 @@ async def generate_autocompletion(
         )
 
 
-@router.post("/emoji/completions")
-async def generate_emoji(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/emoji/completions')
+async def generate_emoji(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
-    if getattr(request.state, "direct", False) and hasattr(request.state, "model"):
+    if getattr(request.state, 'direct', False) and hasattr(request.state, 'model'):
         models = {
             request.state.model['id']: request.state.model,
         }
@@ -677,13 +663,11 @@ async def generate_emoji(
         )
 
 
-@router.post("/moa/completions")
-async def generate_moa_response(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
-):
+@router.post('/moa/completions')
+async def generate_moa_response(request: Request, form_data: dict, user=Depends(get_verified_user)):
     check_credit_by_user_id(user_id=user.id, form_data=form_data)
 
-    if getattr(request.state, "direct", False) and hasattr(request.state, "model"):
+    if getattr(request.state, 'direct', False) and hasattr(request.state, 'model'):
         models = {
             request.state.model['id']: request.state.model,
         }

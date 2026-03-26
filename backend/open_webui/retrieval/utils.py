@@ -555,10 +555,8 @@ async def agenerate_openai_batch_embeddings(
         check_credit_by_user_id(user_id=user.id, form_data={}, is_embedding=True)
 
     try:
-        log.debug(
-            f"agenerate_openai_batch_embeddings:model {model} batch size: {len(texts)}"
-        )
-        form_data = {"input": texts, "model": model}
+        log.debug(f'agenerate_openai_batch_embeddings:model {model} batch size: {len(texts)}')
+        form_data = {'input': texts, 'model': model}
         if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
             form_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
@@ -573,7 +571,7 @@ async def agenerate_openai_batch_embeddings(
             trust_env=True, timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
         ) as session:
             async with session.post(
-                f"{url}/embeddings",
+                f'{url}/embeddings',
                 headers=headers,
                 json=form_data,
                 ssl=AIOHTTP_CLIENT_SESSION_SSL,
@@ -585,28 +583,24 @@ async def agenerate_openai_batch_embeddings(
                     with CreditDeduct(
                         user=user,
                         model_id=model,
-                        body={
-                            "messages": [
-                                {"role": "user", "content": form_data["input"]}
-                            ]
-                        },
+                        body={'messages': [{'role': 'user', 'content': form_data['input']}]},
                         is_stream=False,
                         is_embedding=True,
                     ) as credit_deduct:
-                        if "usage" in data:
+                        if 'usage' in data:
                             credit_deduct.is_official_usage = True
-                            prompt_tokens = data["usage"]["prompt_tokens"]
+                            prompt_tokens = data['usage']['prompt_tokens']
                             credit_deduct.usage.prompt_tokens = prompt_tokens
                             credit_deduct.usage.total_tokens = prompt_tokens
                         else:
-                            credit_deduct.run(form_data["input"])
+                            credit_deduct.run(form_data['input'])
 
-                if "data" in data:
-                    return [item["embedding"] for item in data["data"]]
+                if 'data' in data:
+                    return [item['embedding'] for item in data['data']]
                 else:
-                    raise Exception("Something went wrong :/")
+                    raise Exception('Something went wrong :/')
     except Exception as e:
-        log.exception(f"Error generating openai batch embeddings: {e}")
+        log.exception(f'Error generating openai batch embeddings: {e}')
         return None
 
 
@@ -624,10 +618,8 @@ async def agenerate_azure_openai_batch_embeddings(
         check_credit_by_user_id(user_id=user.id, form_data={}, is_embedding=True)
 
     try:
-        log.debug(
-            f"agenerate_azure_openai_batch_embeddings:deployment {model} batch size: {len(texts)}"
-        )
-        form_data = {"input": texts}
+        log.debug(f'agenerate_azure_openai_batch_embeddings:deployment {model} batch size: {len(texts)}')
+        form_data = {'input': texts}
         if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
             form_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
@@ -652,28 +644,28 @@ async def agenerate_azure_openai_batch_embeddings(
                 r.raise_for_status()
                 data = await r.json()
 
-                input_text = str(form_data["input"])
+                input_text = str(form_data['input'])
                 with CreditDeduct(
                     user=user,
                     model_id=model,
-                    body={"messages": [{"role": "user", "content": input_text}]},
+                    body={'messages': [{'role': 'user', 'content': input_text}]},
                     is_stream=False,
                     is_embedding=True,
                 ) as credit_deduct:
-                    if "usage" in data:
+                    if 'usage' in data:
                         credit_deduct.is_official_usage = True
-                        prompt_tokens = data["usage"]["prompt_tokens"]
+                        prompt_tokens = data['usage']['prompt_tokens']
                         credit_deduct.usage.prompt_tokens = prompt_tokens
                         credit_deduct.usage.total_tokens = prompt_tokens
                     else:
                         credit_deduct.run(input_text)
 
-                if "data" in data:
-                    return [item["embedding"] for item in data["data"]]
+                if 'data' in data:
+                    return [item['embedding'] for item in data['data']]
                 else:
-                    raise Exception("Something went wrong :/")
+                    raise Exception('Something went wrong :/')
     except Exception as e:
-        log.exception(f"Error generating azure openai batch embeddings: {e}")
+        log.exception(f'Error generating azure openai batch embeddings: {e}')
         return None
 
 
@@ -690,10 +682,8 @@ async def agenerate_ollama_batch_embeddings(
         check_credit_by_user_id(user_id=user.id, form_data={}, is_embedding=True)
 
     try:
-        log.debug(
-            f"agenerate_ollama_batch_embeddings:model {model} batch size: {len(texts)}"
-        )
-        form_data = {"input": texts, "model": model}
+        log.debug(f'agenerate_ollama_batch_embeddings:model {model} batch size: {len(texts)}')
+        form_data = {'input': texts, 'model': model}
         if isinstance(RAG_EMBEDDING_PREFIX_FIELD_NAME, str) and isinstance(prefix, str):
             form_data[RAG_EMBEDDING_PREFIX_FIELD_NAME] = prefix
 
@@ -708,7 +698,7 @@ async def agenerate_ollama_batch_embeddings(
             trust_env=True, timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
         ) as session:
             async with session.post(
-                f"{url}/api/embed",
+                f'{url}/api/embed',
                 headers=headers,
                 json=form_data,
                 ssl=AIOHTTP_CLIENT_SESSION_SSL,
@@ -716,22 +706,22 @@ async def agenerate_ollama_batch_embeddings(
                 r.raise_for_status()
                 data = await r.json()
 
-                input_text = str(form_data["input"])
+                input_text = str(form_data['input'])
                 with CreditDeduct(
                     user=user,
                     model_id=model,
-                    body={"messages": [{"role": "user", "content": input_text}]},
+                    body={'messages': [{'role': 'user', 'content': input_text}]},
                     is_stream=False,
                     is_embedding=True,
                 ) as credit_deduct:
                     credit_deduct.run(input_text)
 
-                if "embeddings" in data:
-                    return data["embeddings"]
+                if 'embeddings' in data:
+                    return data['embeddings']
                 else:
-                    raise Exception("Something went wrong :/")
+                    raise Exception('Something went wrong :/')
     except Exception as e:
-        log.exception(f"Error generating ollama batch embeddings: {e}")
+        log.exception(f'Error generating ollama batch embeddings: {e}')
         return None
 
 

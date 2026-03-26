@@ -857,7 +857,7 @@ if frontend_loader.exists():
 # CUSTOM_NAME (Legacy)
 ####################################
 
-CUSTOM_NAME = os.environ.get("CUSTOM_NAME", "")
+CUSTOM_NAME = os.environ.get('CUSTOM_NAME', '')
 if CUSTOM_NAME:
     WEBUI_NAME = CUSTOM_NAME
 
@@ -925,8 +925,8 @@ if OLLAMA_BASE_URL:
     # Remove trailing slash
     OLLAMA_BASE_URL = OLLAMA_BASE_URL[:-1] if OLLAMA_BASE_URL.endswith('/') else OLLAMA_BASE_URL
 
-K8S_FLAG = os.environ.get("K8S_FLAG", "")
-USE_OLLAMA_DOCKER = os.environ.get("USE_OLLAMA_DOCKER", "false")
+K8S_FLAG = os.environ.get('K8S_FLAG', '')
+USE_OLLAMA_DOCKER = os.environ.get('USE_OLLAMA_DOCKER', 'false')
 
 if OLLAMA_BASE_URL == '' and OLLAMA_API_BASE_URL != '':
     OLLAMA_BASE_URL = OLLAMA_API_BASE_URL[:-4] if OLLAMA_API_BASE_URL.endswith('/api') else OLLAMA_API_BASE_URL
@@ -997,14 +997,14 @@ ENABLE_OPENAI_API = PersistentConfig(
     os.environ.get('ENABLE_OPENAI_API', 'True').lower() == 'true',
 )
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-OPENAI_API_BASE_URL = os.environ.get("OPENAI_API_BASE_URL", "")
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_API_BASE_URL = os.environ.get('OPENAI_API_BASE_URL', '')
 
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 GEMINI_API_BASE_URL = os.environ.get('GEMINI_API_BASE_URL', '')
 
-if OPENAI_API_BASE_URL == "":
-    OPENAI_API_BASE_URL = "https://api.openai.com/v1"
+if OPENAI_API_BASE_URL == '':
+    OPENAI_API_BASE_URL = 'https://api.openai.com/v1'
 else:
     if OPENAI_API_BASE_URL.endswith('/'):
         OPENAI_API_BASE_URL = OPENAI_API_BASE_URL[:-1]
@@ -1097,45 +1097,45 @@ ENABLE_LOGIN_FORM = PersistentConfig(
 ENABLE_PASSWORD_AUTH = os.environ.get('ENABLE_PASSWORD_AUTH', 'True').lower() == 'true'
 
 ENABLE_SIGNUP_VERIFY = PersistentConfig(
-    "ENABLE_SIGNUP_VERIFY",
-    "ui.signup_verify.enabled",
-    os.environ.get("ENABLE_SIGNUP_VERIFY", "False").lower() == "true",
+    'ENABLE_SIGNUP_VERIFY',
+    'ui.signup_verify.enabled',
+    os.environ.get('ENABLE_SIGNUP_VERIFY', 'False').lower() == 'true',
 )
 
 SIGNUP_EMAIL_DOMAIN_WHITELIST = PersistentConfig(
-    "SIGNUP_EMAIL_DOMAIN_WHITELIST",
-    "ui.signup.email_domain_whitelist",
-    os.environ.get("SIGNUP_EMAIL_DOMAIN_WHITELIST", ""),
+    'SIGNUP_EMAIL_DOMAIN_WHITELIST',
+    'ui.signup.email_domain_whitelist',
+    os.environ.get('SIGNUP_EMAIL_DOMAIN_WHITELIST', ''),
 )
 
 SMTP_HOST = PersistentConfig(
-    "SMTP_HOST",
-    "ui.smtp.host",
-    os.environ.get("SMTP_HOST", ""),
+    'SMTP_HOST',
+    'ui.smtp.host',
+    os.environ.get('SMTP_HOST', ''),
 )
 
 SMTP_PORT = PersistentConfig(
-    "SMTP_PORT",
-    "ui.smtp.port",
-    os.environ.get("SMTP_PORT", "465"),
+    'SMTP_PORT',
+    'ui.smtp.port',
+    os.environ.get('SMTP_PORT', '465'),
 )
 
 SMTP_USERNAME = PersistentConfig(
-    "SMTP_USERNAME",
-    "ui.smtp.username",
-    os.environ.get("SMTP_USERNAME", ""),
+    'SMTP_USERNAME',
+    'ui.smtp.username',
+    os.environ.get('SMTP_USERNAME', ''),
 )
 
 SMTP_PASSWORD = PersistentConfig(
-    "SMTP_PASSWORD",
-    "ui.smtp.password",
-    os.environ.get("SMTP_PASSWORD", ""),
+    'SMTP_PASSWORD',
+    'ui.smtp.password',
+    os.environ.get('SMTP_PASSWORD', ''),
 )
 
 SMTP_SENT_FROM = PersistentConfig(
-    "SMTP_SENT_FROM",
-    "ui.smtp.sent_from",
-    os.environ.get("SMTP_SENT_FROM", ""),
+    'SMTP_SENT_FROM',
+    'ui.smtp.sent_from',
+    os.environ.get('SMTP_SENT_FROM', ''),
 )
 
 DEFAULT_LOCALE = PersistentConfig(
@@ -1326,9 +1326,7 @@ USER_PERMISSIONS_WORKSPACE_SKILLS_ALLOW_PUBLIC_SHARING = (
     os.environ.get('USER_PERMISSIONS_WORKSPACE_SKILLS_ALLOW_PUBLIC_SHARING', 'False').lower() == 'true'
 )
 
-USER_PERMISSIONS_NOTES_ALLOW_SHARING = (
-    os.environ.get("USER_PERMISSIONS_NOTES_ALLOW_SHARING", "False").lower() == "true"
-)
+USER_PERMISSIONS_NOTES_ALLOW_SHARING = os.environ.get('USER_PERMISSIONS_NOTES_ALLOW_SHARING', 'False').lower() == 'true'
 
 USER_PERMISSIONS_NOTES_ALLOW_PUBLIC_SHARING = (
     os.environ.get('USER_PERMISSIONS_NOTES_ALLOW_PUBLIC_SHARING', 'False').lower() == 'true'
@@ -1338,9 +1336,7 @@ USER_PERMISSIONS_ACCESS_GRANTS_ALLOW_USERS = (
     os.environ.get('USER_PERMISSIONS_ACCESS_GRANTS_ALLOW_USERS', 'True').lower() == 'true'
 )
 
-USER_PERMISSIONS_CHAT_CONTROLS = (
-    os.environ.get("USER_PERMISSIONS_CHAT_CONTROLS", "True").lower() == "true"
-)
+USER_PERMISSIONS_CHAT_CONTROLS = os.environ.get('USER_PERMISSIONS_CHAT_CONTROLS', 'True').lower() == 'true'
 
 USER_PERMISSIONS_CHAT_VALVES = os.environ.get('USER_PERMISSIONS_CHAT_VALVES', 'True').lower() == 'true'
 
@@ -1412,9 +1408,7 @@ USER_PERMISSIONS_FEATURES_API_KEYS = os.environ.get('USER_PERMISSIONS_FEATURES_A
 
 USER_PERMISSIONS_FEATURES_MEMORIES = os.environ.get('USER_PERMISSIONS_FEATURES_MEMORIES', 'True').lower() == 'true'
 
-USER_PERMISSIONS_SETTINGS_INTERFACE = (
-    os.environ.get("USER_PERMISSIONS_SETTINGS_INTERFACE", "True").lower() == "true"
-)
+USER_PERMISSIONS_SETTINGS_INTERFACE = os.environ.get('USER_PERMISSIONS_SETTINGS_INTERFACE', 'True').lower() == 'true'
 
 DEFAULT_USER_PERMISSIONS = {
     'workspace': {
@@ -2290,7 +2284,7 @@ PGVECTOR_PGCRYPTO_KEY = os.getenv('PGVECTOR_PGCRYPTO_KEY', None)
 if PGVECTOR_PGCRYPTO and not PGVECTOR_PGCRYPTO_KEY:
     raise ValueError('PGVECTOR_PGCRYPTO is enabled but PGVECTOR_PGCRYPTO_KEY is not set. Please provide a valid key.')
 
-PGVECTOR_POOL_SIZE = os.environ.get("PGVECTOR_POOL_SIZE", None)
+PGVECTOR_POOL_SIZE = os.environ.get('PGVECTOR_POOL_SIZE', None)
 
 if PGVECTOR_POOL_SIZE != None:
     try:
@@ -2427,7 +2421,7 @@ ORACLE_DB_POOL_MIN = int(os.environ.get('ORACLE_DB_POOL_MIN', 2))
 ORACLE_DB_POOL_MAX = int(os.environ.get('ORACLE_DB_POOL_MAX', 10))
 ORACLE_DB_POOL_INCREMENT = int(os.environ.get('ORACLE_DB_POOL_INCREMENT', 1))
 
-if VECTOR_DB == "oracle23ai":
+if VECTOR_DB == 'oracle23ai':
     if not ORACLE_DB_USER or not ORACLE_DB_PASSWORD or not ORACLE_DB_DSN:
         raise ValueError('Oracle23ai requires setting ORACLE_DB_USER, ORACLE_DB_PASSWORD, and ORACLE_DB_DSN.')
     if ORACLE_DB_USE_WALLET and (not ORACLE_WALLET_DIR or not ORACLE_WALLET_PASSWORD):
@@ -2471,12 +2465,8 @@ ENABLE_ONEDRIVE_INTEGRATION = PersistentConfig(
     os.getenv('ENABLE_ONEDRIVE_INTEGRATION', 'False').lower() == 'true',
 )
 
-ENABLE_ONEDRIVE_PERSONAL = (
-    os.environ.get("ENABLE_ONEDRIVE_PERSONAL", "True").lower() == "true"
-)
-ENABLE_ONEDRIVE_BUSINESS = (
-    os.environ.get("ENABLE_ONEDRIVE_BUSINESS", "True").lower() == "true"
-)
+ENABLE_ONEDRIVE_PERSONAL = os.environ.get('ENABLE_ONEDRIVE_PERSONAL', 'True').lower() == 'true'
+ENABLE_ONEDRIVE_BUSINESS = os.environ.get('ENABLE_ONEDRIVE_BUSINESS', 'True').lower() == 'true'
 
 ONEDRIVE_CLIENT_ID = os.environ.get('ONEDRIVE_CLIENT_ID', '')
 ONEDRIVE_CLIENT_ID_PERSONAL = os.environ.get('ONEDRIVE_CLIENT_ID_PERSONAL', ONEDRIVE_CLIENT_ID)
@@ -2681,9 +2671,7 @@ BYPASS_EMBEDDING_AND_RETRIEVAL = PersistentConfig(
     os.environ.get('BYPASS_EMBEDDING_AND_RETRIEVAL', 'False').lower() == 'true',
 )
 
-RAG_TOP_K = PersistentConfig(
-    "RAG_TOP_K", "rag.top_k", int(os.environ.get("RAG_TOP_K", "3"))
-)
+RAG_TOP_K = PersistentConfig('RAG_TOP_K', 'rag.top_k', int(os.environ.get('RAG_TOP_K', '3')))
 RAG_TOP_K_RERANKER = PersistentConfig(
     'RAG_TOP_K_RERANKER',
     'rag.top_k_reranker',
@@ -2857,16 +2845,14 @@ ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER = PersistentConfig(
     os.environ.get('ENABLE_MARKDOWN_HEADER_TEXT_SPLITTER', 'True').lower() == 'true',
 )
 
-TIKTOKEN_CACHE_DIR = os.environ.get("TIKTOKEN_CACHE_DIR", f"{CACHE_DIR}/tiktoken")
+TIKTOKEN_CACHE_DIR = os.environ.get('TIKTOKEN_CACHE_DIR', f'{CACHE_DIR}/tiktoken')
 TIKTOKEN_ENCODING_NAME = PersistentConfig(
     'TIKTOKEN_ENCODING_NAME',
     'rag.tiktoken_encoding_name',
     os.environ.get('TIKTOKEN_ENCODING_NAME', 'cl100k_base'),
 )
 
-CHUNK_SIZE = PersistentConfig(
-    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "1000"))
-)
+CHUNK_SIZE = PersistentConfig('CHUNK_SIZE', 'rag.chunk_size', int(os.environ.get('CHUNK_SIZE', '1000')))
 
 CHUNK_MIN_SIZE_TARGET = PersistentConfig(
     'CHUNK_MIN_SIZE_TARGET',
@@ -2951,9 +2937,7 @@ RAG_OLLAMA_API_KEY = PersistentConfig(
     os.getenv('RAG_OLLAMA_API_KEY', ''),
 )
 
-ENABLE_RAG_LOCAL_WEB_FETCH = (
-    os.getenv("ENABLE_RAG_LOCAL_WEB_FETCH", "False").lower() == "true"
-)
+ENABLE_RAG_LOCAL_WEB_FETCH = os.getenv('ENABLE_RAG_LOCAL_WEB_FETCH', 'False').lower() == 'true'
 
 DEFAULT_WEB_FETCH_FILTER_LIST = [
     '!169.254.169.254',
@@ -3985,169 +3969,169 @@ LDAP_ATTRIBUTE_FOR_GROUPS = PersistentConfig(
 
 
 CREDIT_NO_CHARGE_EMPTY_RESPONSE = PersistentConfig(
-    "CREDIT_NO_CHARGE_EMPTY_RESPONSE",
-    "credit.no_charge_empty_response",
-    os.environ.get("CREDIT_NO_CHARGE_EMPTY_RESPONSE", "True").lower() == "true",
+    'CREDIT_NO_CHARGE_EMPTY_RESPONSE',
+    'credit.no_charge_empty_response',
+    os.environ.get('CREDIT_NO_CHARGE_EMPTY_RESPONSE', 'True').lower() == 'true',
 )
 
 CREDIT_NO_CREDIT_MSG = PersistentConfig(
-    "CREDIT_NO_CREDIT_MSG",
-    "credit.no_credit_msg",
-    os.environ.get("CREDIT_NO_CREDIT_MSG", "余额不足，请前往 设置-积分 充值"),
+    'CREDIT_NO_CREDIT_MSG',
+    'credit.no_credit_msg',
+    os.environ.get('CREDIT_NO_CREDIT_MSG', '余额不足，请前往 设置-积分 充值'),
 )
 
 CREDIT_EXCHANGE_RATIO = PersistentConfig(
-    "CREDIT_EXCHANGE_RATIO",
-    "credit.exchange.ratio",
-    os.environ.get("CREDIT_EXCHANGE_RATIO", "1"),
+    'CREDIT_EXCHANGE_RATIO',
+    'credit.exchange.ratio',
+    os.environ.get('CREDIT_EXCHANGE_RATIO', '1'),
 )
 
 CREDIT_DEFAULT_CREDIT = PersistentConfig(
-    "CREDIT_DEFAULT_CREDIT",
-    "credit.default_credit",
-    os.environ.get("CREDIT_DEFAULT_CREDIT", "0"),
+    'CREDIT_DEFAULT_CREDIT',
+    'credit.default_credit',
+    os.environ.get('CREDIT_DEFAULT_CREDIT', '0'),
 )
 
 USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE = PersistentConfig(
-    "USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE",
-    "credit.calculate.model_prefix_to_remove",
-    os.environ.get("USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE", ""),
+    'USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE',
+    'credit.calculate.model_prefix_to_remove',
+    os.environ.get('USAGE_CALCULATE_MODEL_PREFIX_TO_REMOVE', ''),
 )
 
 USAGE_DEFAULT_ENCODING_MODEL = PersistentConfig(
-    "USAGE_DEFAULT_ENCODING_MODEL",
-    "credit.calculate.encoding.default_model",
-    os.environ.get("USAGE_DEFAULT_ENCODING_MODEL", "gpt-4o"),
+    'USAGE_DEFAULT_ENCODING_MODEL',
+    'credit.calculate.encoding.default_model',
+    os.environ.get('USAGE_DEFAULT_ENCODING_MODEL', 'gpt-4o'),
 )
 
 USAGE_CALCULATE_DEFAULT_REQUEST_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_DEFAULT_REQUEST_PRICE",
-    "credit.calculate.default_request_price",
-    os.environ.get("USAGE_CALCULATE_DEFAULT_REQUEST_PRICE", "0"),
+    'USAGE_CALCULATE_DEFAULT_REQUEST_PRICE',
+    'credit.calculate.default_request_price',
+    os.environ.get('USAGE_CALCULATE_DEFAULT_REQUEST_PRICE', '0'),
 )
 
 USAGE_CALCULATE_DEFAULT_TOKEN_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_DEFAULT_TOKEN_PRICE",
-    "credit.calculate.default_token_price",
-    os.environ.get("USAGE_CALCULATE_DEFAULT_TOKEN_PRICE", "0"),
+    'USAGE_CALCULATE_DEFAULT_TOKEN_PRICE',
+    'credit.calculate.default_token_price',
+    os.environ.get('USAGE_CALCULATE_DEFAULT_TOKEN_PRICE', '0'),
 )
 
 USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE",
-    "credit.calculate.default_embedding_price",
-    os.environ.get("USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE", "0"),
+    'USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE',
+    'credit.calculate.default_embedding_price',
+    os.environ.get('USAGE_CALCULATE_DEFAULT_EMBEDDING_PRICE', '0'),
 )
 
 USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE",
-    "credit.calculate.feature.image_gen_price",
-    os.environ.get("USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE", "0"),
+    'USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE',
+    'credit.calculate.feature.image_gen_price',
+    os.environ.get('USAGE_CALCULATE_FEATURE_IMAGE_GEN_PRICE', '0'),
 )
 
 USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE",
-    "credit.calculate.feature.code_execute_price",
-    os.environ.get("USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE", "0"),
+    'USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE',
+    'credit.calculate.feature.code_execute_price',
+    os.environ.get('USAGE_CALCULATE_FEATURE_CODE_EXECUTE_PRICE', '0'),
 )
 
 USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE",
-    "credit.calculate.feature.web_search_price",
-    os.environ.get("USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE", "0"),
+    'USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE',
+    'credit.calculate.feature.web_search_price',
+    os.environ.get('USAGE_CALCULATE_FEATURE_WEB_SEARCH_PRICE', '0'),
 )
 
 USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE = PersistentConfig(
-    "USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE",
-    "credit.calculate.feature.tool_server_price",
-    os.environ.get("USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE", "0"),
+    'USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE',
+    'credit.calculate.feature.tool_server_price',
+    os.environ.get('USAGE_CALCULATE_FEATURE_TOOL_SERVER_PRICE', '0'),
 )
 
 USAGE_CALCULATE_MINIMUM_COST = PersistentConfig(
-    "USAGE_CALCULATE_MINIMUM_COST",
-    "credit.calculate.minimum_cost",
-    os.environ.get("USAGE_CALCULATE_MINIMUM_COST", "0"),
+    'USAGE_CALCULATE_MINIMUM_COST',
+    'credit.calculate.minimum_cost',
+    os.environ.get('USAGE_CALCULATE_MINIMUM_COST', '0'),
 )
 
 USAGE_CUSTOM_PRICE_CONFIG = PersistentConfig(
-    "USAGE_CUSTOM_PRICE_CONFIG",
-    "credit.calculate.custom_price_config",
-    os.environ.get("USAGE_CUSTOM_PRICE_CONFIG", "[]"),
+    'USAGE_CUSTOM_PRICE_CONFIG',
+    'credit.calculate.custom_price_config',
+    os.environ.get('USAGE_CUSTOM_PRICE_CONFIG', '[]'),
 )
 
 EZFP_PAY_PRIORITY = PersistentConfig(
-    "EZFP_PAY_PRIORITY",
-    "credit.ezfp.pay_priority",
-    os.environ.get("EZFP_PAY_PRIORITY", "qrcode"),
+    'EZFP_PAY_PRIORITY',
+    'credit.ezfp.pay_priority',
+    os.environ.get('EZFP_PAY_PRIORITY', 'qrcode'),
 )
 
 EZFP_ENDPOINT = PersistentConfig(
-    "EZFP_ENDPOINT",
-    "credit.ezfp.endpoint",
-    os.environ.get("EZFP_ENDPOINT", ""),
+    'EZFP_ENDPOINT',
+    'credit.ezfp.endpoint',
+    os.environ.get('EZFP_ENDPOINT', ''),
 )
 
 EZFP_PID = PersistentConfig(
-    "EZFP_PID",
-    "credit.ezfp.pid",
-    os.environ.get("EZFP_PID", ""),
+    'EZFP_PID',
+    'credit.ezfp.pid',
+    os.environ.get('EZFP_PID', ''),
 )
 
 EZFP_KEY = PersistentConfig(
-    "EZFP_KEY",
-    "credit.ezfp.key",
-    os.environ.get("EZFP_KEY", ""),
+    'EZFP_KEY',
+    'credit.ezfp.key',
+    os.environ.get('EZFP_KEY', ''),
 )
 
 EZFP_CALLBACK_HOST = PersistentConfig(
-    "EZFP_CALLBACK_HOST",
-    "credit.ezfp.callback_host",
-    os.environ.get("EZFP_CALLBACK_HOST", ""),
+    'EZFP_CALLBACK_HOST',
+    'credit.ezfp.callback_host',
+    os.environ.get('EZFP_CALLBACK_HOST', ''),
 )
 
 EZFP_AMOUNT_CONTROL = PersistentConfig(
-    "EZFP_AMOUNT_CONTROL",
-    "credit.ezfp.amount_control",
-    os.environ.get("EZFP_AMOUNT_CONTROL", ""),
+    'EZFP_AMOUNT_CONTROL',
+    'credit.ezfp.amount_control',
+    os.environ.get('EZFP_AMOUNT_CONTROL', ''),
 )
 
 ALIPAY_SERVER_URL = PersistentConfig(
-    "ALIPAY_SERVER_URL",
-    "credit.alipay.server_url",
-    os.environ.get("ALIPAY_SERVER_URL", "https://openapi.alipay.com/gateway.do"),
+    'ALIPAY_SERVER_URL',
+    'credit.alipay.server_url',
+    os.environ.get('ALIPAY_SERVER_URL', 'https://openapi.alipay.com/gateway.do'),
 )
 
 ALIPAY_APP_ID = PersistentConfig(
-    "ALIPAY_APP_ID",
-    "credit.alipay.app_id",
-    os.environ.get("ALIPAY_APP_ID", ""),
+    'ALIPAY_APP_ID',
+    'credit.alipay.app_id',
+    os.environ.get('ALIPAY_APP_ID', ''),
 )
 
 ALIPAY_APP_PRIVATE_KEY = PersistentConfig(
-    "ALIPAY_APP_PRIVATE_KEY",
-    "credit.alipay.app_private_key",
-    os.environ.get("ALIPAY_APP_PRIVATE_KEY", ""),
+    'ALIPAY_APP_PRIVATE_KEY',
+    'credit.alipay.app_private_key',
+    os.environ.get('ALIPAY_APP_PRIVATE_KEY', ''),
 )
 
 ALIPAY_ALIPAY_PUBLIC_KEY = PersistentConfig(
-    "ALIPAY_ALIPAY_PUBLIC_KEY",
-    "credit.alipay.alipay_public_key",
-    os.environ.get("ALIPAY_ALIPAY_PUBLIC_KEY", ""),
+    'ALIPAY_ALIPAY_PUBLIC_KEY',
+    'credit.alipay.alipay_public_key',
+    os.environ.get('ALIPAY_ALIPAY_PUBLIC_KEY', ''),
 )
 
 ALIPAY_CALLBACK_HOST = PersistentConfig(
-    "ALIPAY_CALLBACK_HOST",
-    "credit.alipay.callback_host",
-    os.environ.get("ALIPAY_CALLBACK_HOST", ""),
+    'ALIPAY_CALLBACK_HOST',
+    'credit.alipay.callback_host',
+    os.environ.get('ALIPAY_CALLBACK_HOST', ''),
 )
 
 ALIPAY_AMOUNT_CONTROL = PersistentConfig(
-    "ALIPAY_AMOUNT_CONTROL",
-    "credit.alipay.amount_control",
-    os.environ.get("ALIPAY_AMOUNT_CONTROL", ""),
+    'ALIPAY_AMOUNT_CONTROL',
+    'credit.alipay.amount_control',
+    os.environ.get('ALIPAY_AMOUNT_CONTROL', ''),
 )
 
 ALIPAY_PRODUCT_CODE = PersistentConfig(
-    "ALIPAY_PRODUCT_CODE",
-    "credit.alipay.product_code",
-    os.environ.get("ALIPAY_PRODUCT_CODE", ""),
+    'ALIPAY_PRODUCT_CODE',
+    'credit.alipay.product_code',
+    os.environ.get('ALIPAY_PRODUCT_CODE', ''),
 )
