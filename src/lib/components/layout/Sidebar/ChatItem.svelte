@@ -154,6 +154,12 @@
 	const archiveChatHandler = async (id) => {
 		try {
 			await archiveChatById(localStorage.token, id);
+
+			if ($chatId === id) {
+				await goto('/');
+				chatId.set('');
+			}
+
 			dispatch('change');
 			toast.success($i18n.t('Chat archived.'));
 		} catch (error) {
@@ -552,11 +558,8 @@
 					onClose={() => {
 						dispatch('unselect');
 					}}
-					on:change={async () => {
+					onPinChange={async () => {
 						dispatch('change');
-					}}
-					on:tag={(e) => {
-						dispatch('tag', e.detail);
 					}}
 				>
 					<button
