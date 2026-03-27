@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.12.1] - 2026.03.27
+
+### Changed
+
+- 合并官方 [0.8.12](https://github.com/open-webui/open-webui/releases/tag/v0.8.12) 改动
+
 ## [0.8.11.1] - 2026.03.26
 
 ### Changed
 
-- 合并官方 0.8.11 改动
+- 合并官方 [0.8.11](https://github.com/open-webui/open-webui/releases/tag/v0.8.11) 改动
 
 ## [0.8.10.2] - 2026.03.18
 
@@ -21,43 +27,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.8.10 改动
+- 合并官方 [0.8.10](https://github.com/open-webui/open-webui/releases/tag/v0.8.10) 改动
 
 ## [0.8.9.1] - 2026.03.08
 
 ### Changed
 
-- 合并官方 0.8.9 改动
+- 合并官方 [0.8.9](https://github.com/open-webui/open-webui/releases/tag/v0.8.9) 改动
 
 ## [0.8.8.1] - 2026.03.03
 
 ### Changed
 
-- 合并官方 0.8.8 改动
+- 合并官方 [0.8.8](https://github.com/open-webui/open-webui/releases/tag/v0.8.8) 改动
 
 ## [0.8.7.1] - 2026.03.02
 
 ### Changed
 
-- 合并官方 0.8.7 改动
+- 合并官方 [0.8.7](https://github.com/open-webui/open-webui/releases/tag/v0.8.7) 改动
 
 ## [0.8.5.1] - 2026.02.24
 
 ### Changed
 
-- 合并官方 0.8.5 改动
+- 合并官方 [0.8.5](https://github.com/open-webui/open-webui/releases/tag/v0.8.5) 改动
 
 ## [0.8.3.1] - 2026.02.19
 
 ### Changed
 
-- 合并官方 0.8.3 改动
+- 合并官方 [0.8.3](https://github.com/open-webui/open-webui/releases/tag/v0.8.3) 改动
 
 ## [0.8.1.1] - 2026.02.14
 
 ### Changed
 
-- 合并官方 0.8.1 改动
+- 合并官方 [0.8.1](https://github.com/open-webui/open-webui/releases/tag/v0.8.1) 改动
 - 移除 Responses 接口
 
 ## [0.8.0.2] - 2026.02.13
@@ -70,7 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.8.0 改动
+- 合并官方 [0.8.0](https://github.com/open-webui/open-webui/releases/tag/v0.8.0) 改动
 
 ## [0.7.2.5] - 2026.01.28
 
@@ -82,13 +88,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.7.2 改动
+- 合并官方 [0.7.2](https://github.com/open-webui/open-webui/releases/tag/v0.7.2) 改动
 
 ## [0.7.1.1] - 2026.01.10
 
 ### Changed
 
-- 合并官方 0.7.1 改动
+- 合并官方 [0.7.1](https://github.com/open-webui/open-webui/releases/tag/v0.7.1) 改动
 
 ## [0.6.43.2] - 2025.12.22
 
@@ -100,7 +106,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.43 改动
+- 合并官方 [0.6.43](https://github.com/open-webui/open-webui/releases/tag/v0.6.43) 改动
 
 ## [0.6.42.1] - 2025.12.21
 
@@ -114,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 对部分配置增加额外的校验和提示
 - 优化积分统计面板、积分日志、兑换码管理的加载性能
-- 合并官方 0.6.42 改动
+- 合并官方 [0.6.42](https://github.com/open-webui/open-webui/releases/tag/v0.6.42) 改动
 
 ### Fixed
 
@@ -125,7 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.41 改动
+- 合并官方 [0.6.41](https://github.com/open-webui/open-webui/releases/tag/v0.6.41) 改动
 
 ## [0.6.40.2] - 2025.11.27
 
@@ -141,13 +147,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.40 改动
+- 合并官方 [0.6.40](https://github.com/open-webui/open-webui/releases/tag/v0.6.40) 改动
 
 ## [0.6.38.1] - 2025.11.24
 
 ### Changed
 
-- 合并官方 0.6.38 改动
+- 合并官方 [0.6.38](https://github.com/open-webui/open-webui/releases/tag/v0.6.38) 改动
 
 ## [0.6.37.1] - 2025.11.24
 
@@ -157,7 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.37 改动
+- 合并官方 [0.6.37](https://github.com/open-webui/open-webui/releases/tag/v0.6.37) 改动
 
 ### Fixed
 
@@ -167,19 +173,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.36 改动
+- 合并官方 [0.6.36](https://github.com/open-webui/open-webui/releases/tag/v0.6.36) 改动
 
 ## [0.6.34.1] - 2025.10.17
 
 ### Changed
 
-- 合并官方 0.6.34 改动
+- 合并官方 [0.6.34](https://github.com/open-webui/open-webui/releases/tag/v0.6.34) 改动
 
 ## [0.6.33.1] - 2025.10.08
 
 ### Changed
 
-- 合并官方 0.6.33 改动
+- 合并官方 [0.6.33](https://github.com/open-webui/open-webui/releases/tag/v0.6.33) 改动
 
 ## [0.6.32.1] - 2025.09.29
 
@@ -189,7 +195,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.32 改动
+- 合并官方 [0.6.32](https://github.com/open-webui/open-webui/releases/tag/v0.6.32) 改动
 
 ## [0.6.31.1] - 2025.09.26
 
@@ -197,7 +203,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 移除 Markdown 编辑器
 - 移除自定义代码块样式
-- 合并官方 0.6.31 改动
+- 合并官方 [0.6.31](https://github.com/open-webui/open-webui/releases/tag/v0.6.31) 改动
 
 ### Fixed
 
@@ -207,37 +213,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.30 改动
+- 合并官方 [0.6.30](https://github.com/open-webui/open-webui/releases/tag/v0.6.30) 改动
 
 ## [0.6.28.1] - 2025.09.11
 
 ### Changed
 
-- 合并官方 0.6.28 改动
+- 合并官方 [0.6.28](https://github.com/open-webui/open-webui/releases/tag/v0.6.28) 改动
 
 ## [0.6.27.1] - 2025.09.10
 
 ### Changed
 
-- 合并官方 0.6.27 改动
+- 合并官方 [0.6.27](https://github.com/open-webui/open-webui/releases/tag/v0.6.27) 改动
 
 ## [0.6.26.1] - 2025.08.28
 
 ### Changed
 
-- 合并官方 0.6.26 改动
+- 合并官方 [0.6.26](https://github.com/open-webui/open-webui/releases/tag/v0.6.26) 改动
 
 ## [0.6.25.1] - 2025.08.22
 
 ### Changed
 
-- 合并官方 0.6.25 改动
+- 合并官方 [0.6.25](https://github.com/open-webui/open-webui/releases/tag/v0.6.25) 改动
 
 ## [0.6.24.1] - 2025.08.22
 
 ### Changed
 
-- 合并官方 0.6.24 改动
+- 合并官方 [0.6.24](https://github.com/open-webui/open-webui/releases/tag/v0.6.24) 改动
 
 ## [0.6.23.1] - 2025.08.22
 
@@ -247,7 +253,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 支持禁用自定义编辑器和代码块
 - 优化 DB 初始化流程
 - 移除不必要的对话日志加载逻辑
-- 合并官方 0.6.23 改动
+- 合并官方 [0.6.23](https://github.com/open-webui/open-webui/releases/tag/v0.6.23) 改动
 
 ### Fixed
 
@@ -263,13 +269,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.22 改动
+- 合并官方 [0.6.22](https://github.com/open-webui/open-webui/releases/tag/v0.6.22) 改动
 
 ## [0.6.21.1] - 2025.08.10
 
 ### Changed
 
-- 合并官方 0.6.21 改动
+- 合并官方 [0.6.21](https://github.com/open-webui/open-webui/releases/tag/v0.6.21) 改动
 
 ## [0.6.20.1] - 2025.08.10
 
@@ -282,7 +288,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - 移除积分统计面板的数字展示
-- 合并官方 0.6.20 改动
+- 合并官方 [0.6.20](https://github.com/open-webui/open-webui/releases/tag/v0.6.20) 改动
 
 ### Fixed
 
@@ -292,7 +298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.18 改动
+- 合并官方 [0.6.18](https://github.com/open-webui/open-webui/releases/tag/v0.6.18) 改动
 
 ## [0.6.16.1] - 2025.07.15
 
@@ -303,13 +309,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - 移除英文/中文以外的语言支持
-- 合并官方 0.6.16 改动
+- 合并官方 [0.6.16](https://github.com/open-webui/open-webui/releases/tag/v0.6.16) 改动
 
 ## [0.6.15.1] - 2025.06.18
 
 ### Changed
 
-- 合并官方 0.6.15 改动
+- 合并官方 [0.6.15](https://github.com/open-webui/open-webui/releases/tag/v0.6.15) 改动
 
 ## [0.6.14.1] - 2025.06.11
 
@@ -323,7 +329,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - 修改积分统计的最大范围为最近 180 天
-- 合并官方 0.6.14 改动
+- 合并官方 [0.6.14](https://github.com/open-webui/open-webui/releases/tag/v0.6.14) 改动
 
 ## [0.6.13.1] - 2025.05.30
 
@@ -333,7 +339,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.13 改动
+- 合并官方 [0.6.13](https://github.com/open-webui/open-webui/releases/tag/v0.6.13) 改动
 
 ## [0.6.12.1] - 2025.05.29
 
@@ -343,14 +349,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.12 改动
+- 合并官方 [0.6.12](https://github.com/open-webui/open-webui/releases/tag/v0.6.12) 改动
 
 ## [0.6.11.1] - 2025.05.27
 
 ### Changed
 
 - 优化用量信息的交互
-- 合并官方 0.6.11 改动
+- 合并官方 [0.6.11](https://github.com/open-webui/open-webui/releases/tag/v0.6.11) 改动
 
 ### Fixed
 
@@ -368,7 +374,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 积分日志搜索修改为搜索用户名
 - 移除自定义滚动条样式
 - 修改积分日志单页数量为 30
-- 合并官方 0.6.10 改动
+- 合并官方 [0.6.10](https://github.com/open-webui/open-webui/releases/tag/v0.6.10) 改动
 
 ## [0.6.9.1] - 2025.05.11
 
@@ -382,7 +388,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.9 改动
+- 合并官方 [0.6.9](https://github.com/open-webui/open-webui/releases/tag/v0.6.9) 改动
 
 ### Fixed
 
@@ -398,7 +404,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- 合并官方 0.6.7 改动
+- 合并官方 [0.6.7](https://github.com/open-webui/open-webui/releases/tag/v0.6.7) 改动
 
 ## [0.6.6.1] - 2025-05-05
 
