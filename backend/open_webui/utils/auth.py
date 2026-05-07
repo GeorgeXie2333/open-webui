@@ -36,6 +36,7 @@ from open_webui.env import (
     ENABLE_PASSWORD_VALIDATION,
     OFFLINE_MODE,
     LICENSE_BLOB,
+    PASSWORD_VALIDATION_HINT,
     PASSWORD_VALIDATION_REGEX_PATTERN,
     REDIS_KEY_PREFIX,
     pk,
@@ -59,7 +60,7 @@ from open_webui.utils.redis import get_redis_connection, get_sentinels_from_env
 log = logging.getLogger(__name__)
 
 SESSION_SECRET = WEBUI_SECRET_KEY
-ALGORITHM = "HS256"
+ALGORITHM = 'HS256'
 
 
 ##############
@@ -87,89 +88,57 @@ def override_static(path: str, content: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
     r = requests.get(content, stream=True)
-    with open(path, "wb") as f:
+    with open(path, 'wb') as f:
         r.raw.decode_content = True
         shutil.copyfileobj(r.raw, f)
 
 
 def get_license_data(app, key):
     payload = {
-        "resources": {
-            os.path.join(STATIC_DIR, "logo.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "favicon.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "favicon.svg"): os.getenv("CUSTOM_SVG", ""),
-            os.path.join(STATIC_DIR, "favicon-96x96.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "apple-touch-icon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "web-app-manifest-192x192.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "web-app-manifest-512x512.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "splash.png"): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(STATIC_DIR, "favicon.ico"): os.getenv("CUSTOM_ICO", ""),
-            os.path.join(STATIC_DIR, "favicon-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
-            os.path.join(STATIC_DIR, "splash-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "favicon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon.svg"): os.getenv(
-                "CUSTOM_SVG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon-96x96.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/apple-touch-icon.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(
-                FRONTEND_BUILD_DIR, "static/web-app-manifest-192x192.png"
-            ): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(
-                FRONTEND_BUILD_DIR, "static/web-app-manifest-512x512.png"
-            ): os.getenv("CUSTOM_PNG", ""),
-            os.path.join(FRONTEND_BUILD_DIR, "static/splash.png"): os.getenv(
-                "CUSTOM_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon.ico"): os.getenv(
-                "CUSTOM_ICO", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/favicon-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
-            os.path.join(FRONTEND_BUILD_DIR, "static/splash-dark.png"): os.getenv(
-                "CUSTOM_DARK_PNG", ""
-            ),
+        'resources': {
+            os.path.join(STATIC_DIR, 'logo.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'favicon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'favicon.svg'): os.getenv('CUSTOM_SVG', ''),
+            os.path.join(STATIC_DIR, 'favicon-96x96.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'apple-touch-icon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'web-app-manifest-192x192.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'web-app-manifest-512x512.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'splash.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(STATIC_DIR, 'favicon.ico'): os.getenv('CUSTOM_ICO', ''),
+            os.path.join(STATIC_DIR, 'favicon-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
+            os.path.join(STATIC_DIR, 'splash-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'favicon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon.svg'): os.getenv('CUSTOM_SVG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon-96x96.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/apple-touch-icon.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/web-app-manifest-192x192.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/web-app-manifest-512x512.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/splash.png'): os.getenv('CUSTOM_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon.ico'): os.getenv('CUSTOM_ICO', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/favicon-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
+            os.path.join(FRONTEND_BUILD_DIR, 'static/splash-dark.png'): os.getenv('CUSTOM_DARK_PNG', ''),
         },
-        "metadata": {
-            "type": "enterprise",
-            "organization_name": os.getenv("ORGANIZATION_NAME", "OpenWebui"),
+        'metadata': {
+            'type': 'enterprise',
+            'organization_name': os.getenv('ORGANIZATION_NAME', 'OpenWebui'),
         },
     }
     try:
         for k, v in payload.items():
-            if k == "resources":
+            if k == 'resources':
                 for p, c in v.items():
                     if c:
-                        globals().get("override_static", lambda a, b: None)(p, c)
-            elif k == "count":
-                setattr(app.state, "USER_COUNT", v)
-            elif k == "name":
-                setattr(app.state, "WEBUI_NAME", v)
-            elif k == "metadata":
-                setattr(app.state, "LICENSE_METADATA", v)
+                        globals().get('override_static', lambda a, b: None)(p, c)
+            elif k == 'count':
+                setattr(app.state, 'USER_COUNT', v)
+            elif k == 'name':
+                setattr(app.state, 'WEBUI_NAME', v)
+            elif k == 'metadata':
+                setattr(app.state, 'LICENSE_METADATA', v)
         return True
     except Exception as ex:
-        log.exception(f"License: Uncaught Exception: {ex}")
+        log.exception(f'License: Uncaught Exception: {ex}')
 
     return True
 
@@ -179,19 +148,19 @@ bearer_security = HTTPBearer(auto_error=False)
 
 def get_password_hash(password: str) -> str:
     """Hash a password using bcrypt"""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
 def validate_password(password: str) -> bool:
     # The password passed to bcrypt must be 72 bytes or fewer. If it is longer, it will be truncated before hashing.
-    if len(password.encode("utf-8")) > 72:
+    if len(password.encode('utf-8')) > 72:
         raise Exception(
             ERROR_MESSAGES.PASSWORD_TOO_LONG,
         )
 
     if ENABLE_PASSWORD_VALIDATION:
         if not PASSWORD_VALIDATION_REGEX_PATTERN.match(password):
-            raise Exception(ERROR_MESSAGES.INVALID_PASSWORD())
+            raise Exception(ERROR_MESSAGES.INVALID_PASSWORD(PASSWORD_VALIDATION_HINT))
 
     return True
 
@@ -200,23 +169,26 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
     return (
         bcrypt.checkpw(
-            plain_password.encode("utf-8"),
-            hashed_password.encode("utf-8"),
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8'),
         )
         if hashed_password
         else None
     )
 
 
+# Let the one who signed this token be remembered at every gate,
+# and may the claims therein honor the creator long after
+# the session has closed.
 def create_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
     payload = data.copy()
 
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
-        payload.update({"exp": expire})
+        payload.update({'exp': expire})
 
     jti = str(uuid.uuid4())
-    payload.update({"jti": jti})
+    payload.update({'jti': jti})
 
     encoded_jwt = jwt.encode(payload, SESSION_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
@@ -233,12 +205,10 @@ def decode_token(token: str) -> Optional[dict]:
 async def is_valid_token(request, decoded) -> bool:
     # Require Redis to check revoked tokens
     if request.app.state.redis:
-        jti = decoded.get("jti")
+        jti = decoded.get('jti')
 
         if jti:
-            revoked = await request.app.state.redis.get(
-                f"{REDIS_KEY_PREFIX}:auth:token:{jti}:revoked"
-            )
+            revoked = await request.app.state.redis.get(f'{REDIS_KEY_PREFIX}:auth:token:{jti}:revoked')
             if revoked:
                 return False
 
@@ -254,37 +224,35 @@ async def invalidate_token(request, token):
 
     # Require Redis to store revoked tokens
     if request.app.state.redis:
-        jti = decoded.get("jti")
-        exp = decoded.get("exp")
+        jti = decoded.get('jti')
+        exp = decoded.get('exp')
 
         if jti and exp:
-            ttl = exp - int(
-                datetime.now(UTC).timestamp()
-            )  # Calculate time-to-live for the token
+            ttl = exp - int(datetime.now(UTC).timestamp())  # Calculate time-to-live for the token
 
             if ttl > 0:
                 # Store the revoked token in Redis with an expiration time
                 await request.app.state.redis.set(
-                    f"{REDIS_KEY_PREFIX}:auth:token:{jti}:revoked",
-                    "1",
+                    f'{REDIS_KEY_PREFIX}:auth:token:{jti}:revoked',
+                    '1',
                     ex=ttl,
                 )
 
 
 def extract_token_from_auth_header(auth_header: str):
-    return auth_header[len("Bearer ") :]
+    return auth_header[len('Bearer ') :]
 
 
 def create_api_key():
-    key = str(uuid.uuid4()).replace("-", "")
-    return f"sk-{key}"
+    key = str(uuid.uuid4()).replace('-', '')
+    return f'sk-{key}'
 
 
 def get_http_authorization_cred(auth_header: Optional[str]):
     if not auth_header:
         return None
     try:
-        scheme, credentials = auth_header.split(" ")
+        scheme, credentials = auth_header.split(' ')
         return HTTPAuthorizationCredentials(scheme=scheme, credentials=credentials)
     except Exception:
         return None
@@ -305,23 +273,27 @@ async def get_current_user(
     if auth_token is not None:
         token = auth_token.credentials
 
-    if token is None and "token" in request.cookies:
-        token = request.cookies.get("token")
+    if token is None and 'token' in request.cookies:
+        token = request.cookies.get('token')
+
+    # Fallback to request.state.token (set by middleware, e.g. for x-api-key)
+    if token is None and hasattr(request.state, 'token') and request.state.token:
+        token = request.state.token.credentials
 
     if token is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(status_code=401, detail='Not authenticated')
 
     # auth by api key
-    if token.startswith("sk-"):
+    if token.startswith('sk-'):
         user = get_current_user_by_api_key(request, token)
 
         # Add user info to current span
         current_span = trace.get_current_span()
         if current_span:
-            current_span.set_attribute("client.user.id", user.id)
-            current_span.set_attribute("client.user.email", user.email)
-            current_span.set_attribute("client.user.role", user.role)
-            current_span.set_attribute("client.auth.type", "api_key")
+            current_span.set_attribute('client.user.id', user.id)
+            current_span.set_attribute('client.user.email', user.email)
+            current_span.set_attribute('client.user.role', user.role)
+            current_span.set_attribute('client.auth.type', 'api_key')
 
         return user
 
@@ -332,17 +304,17 @@ async def get_current_user(
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
+                detail='Invalid token',
             )
 
-        if data is not None and "id" in data:
-            if data.get("jti") and not await is_valid_token(request, data):
+        if data is not None and 'id' in data:
+            if data.get('jti') and not await is_valid_token(request, data):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Invalid token",
+                    detail='Invalid token',
                 )
 
-            user = Users.get_user_by_id(data["id"])
+            user = Users.get_user_by_id(data['id'])
             if user is None:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -350,22 +322,20 @@ async def get_current_user(
                 )
             else:
                 if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
-                    trusted_email = request.headers.get(
-                        WEBUI_AUTH_TRUSTED_EMAIL_HEADER, ""
-                    ).lower()
+                    trusted_email = request.headers.get(WEBUI_AUTH_TRUSTED_EMAIL_HEADER, '').lower()
                     if trusted_email and user.email != trusted_email:
                         raise HTTPException(
                             status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="User mismatch. Please sign in again.",
+                            detail='User mismatch. Please sign in again.',
                         )
 
                 # Add user info to current span
                 current_span = trace.get_current_span()
                 if current_span:
-                    current_span.set_attribute("client.user.id", user.id)
-                    current_span.set_attribute("client.user.email", user.email)
-                    current_span.set_attribute("client.user.role", user.role)
-                    current_span.set_attribute("client.auth.type", "jwt")
+                    current_span.set_attribute('client.user.id', user.id)
+                    current_span.set_attribute('client.user.email', user.email)
+                    current_span.set_attribute('client.user.role', user.role)
+                    current_span.set_attribute('client.auth.type', 'jwt')
 
                 # Refresh the user's last active timestamp asynchronously
                 # to prevent blocking the request
@@ -379,15 +349,15 @@ async def get_current_user(
             )
     except Exception as e:
         # Delete the token cookie
-        if request.cookies.get("token"):
-            response.delete_cookie("token")
+        if request.cookies.get('token'):
+            response.delete_cookie('token')
 
-        if request.cookies.get("oauth_id_token"):
-            response.delete_cookie("oauth_id_token")
+        if request.cookies.get('oauth_id_token'):
+            response.delete_cookie('oauth_id_token')
 
         # Delete OAuth session if present
-        if request.cookies.get("oauth_session_id"):
-            response.delete_cookie("oauth_session_id")
+        if request.cookies.get('oauth_session_id'):
+            response.delete_cookie('oauth_session_id')
 
         raise e
 
@@ -403,31 +373,29 @@ def get_current_user_by_api_key(request, api_key: str):
         )
 
     if not request.state.enable_api_keys or (
-        user.role != "admin"
+        user.role != 'admin'
         and not has_permission(
             user.id,
-            "features.api_keys",
+            'features.api_keys',
             request.app.state.config.USER_PERMISSIONS,
         )
     ):
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.API_KEY_NOT_ALLOWED
-        )
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.API_KEY_NOT_ALLOWED)
 
     # Add user info to current span
     current_span = trace.get_current_span()
     if current_span:
-        current_span.set_attribute("client.user.id", user.id)
-        current_span.set_attribute("client.user.email", user.email)
-        current_span.set_attribute("client.user.role", user.role)
-        current_span.set_attribute("client.auth.type", "api_key")
+        current_span.set_attribute('client.user.id', user.id)
+        current_span.set_attribute('client.user.email', user.email)
+        current_span.set_attribute('client.user.role', user.role)
+        current_span.set_attribute('client.auth.type', 'api_key')
 
     Users.update_last_active_by_id(user.id)
     return user
 
 
 def get_verified_user(user=Depends(get_current_user)):
-    if user.role not in {"user", "admin"}:
+    if user.role not in {'user', 'admin'}:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
@@ -436,7 +404,7 @@ def get_verified_user(user=Depends(get_current_user)):
 
 
 def get_admin_user(user=Depends(get_current_user)):
-    if user.role != "admin":
+    if user.role != 'admin':
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
@@ -444,7 +412,7 @@ def get_admin_user(user=Depends(get_current_user)):
     return user
 
 
-def create_admin_user(email: str, password: str, name: str = "Admin"):
+def create_admin_user(email: str, password: str, name: str = 'Admin'):
     """
     Create an admin user from environment variables.
     Used for headless/automated deployments.
@@ -455,26 +423,26 @@ def create_admin_user(email: str, password: str, name: str = "Admin"):
         return None
 
     if Users.has_users():
-        log.debug("Users already exist, skipping admin creation")
+        log.debug('Users already exist, skipping admin creation')
         return None
 
-    log.info(f"Creating admin account from environment variables: {email}")
+    log.info(f'Creating admin account from environment variables: {email}')
     try:
         hashed = get_password_hash(password)
         user = Auths.insert_new_auth(
             email=email.lower(),
             password=hashed,
             name=name,
-            role="admin",
+            role='admin',
         )
         if user:
-            log.info(f"Admin account created successfully: {email}")
+            log.info(f'Admin account created successfully: {email}')
             return user
         else:
-            log.error("Failed to create admin account from environment variables")
+            log.error('Failed to create admin account from environment variables')
             return None
     except Exception as e:
-        log.error(f"Error creating admin account: {e}")
+        log.error(f'Error creating admin account: {e}')
         return None
 
 
@@ -610,7 +578,7 @@ password_reset_email_template = """
 
 
 def get_email_code_key(code: str) -> str:
-    return f"email_verify:{code}"
+    return f'email_verify:{code}'
 
 
 def get_password_reset_key(code: str) -> str:
@@ -620,19 +588,16 @@ def get_password_reset_key(code: str) -> str:
 def send_verify_email(email: str):
     redis = get_redis_connection(
         redis_url=REDIS_URL,
-        redis_sentinels=get_sentinels_from_env(
-            REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT
-        ),
+        redis_sentinels=get_sentinels_from_env(REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT),
         redis_cluster=REDIS_CLUSTER,
     )
-    code = f"{uuid.uuid4().hex}{uuid.uuid1().hex}"
+    code = f'{uuid.uuid4().hex}{uuid.uuid1().hex}'
     redis.set(name=get_email_code_key(code=code), value=email, ex=timedelta(days=1))
-    link = f"{WEBUI_URL.value.rstrip('/')}/api/v1/auths/signup_verify/{code}"
+    link = f'{WEBUI_URL.value.rstrip("/")}/api/v1/auths/signup_verify/{code}'
     send_email(
         receiver=email,
         subject=f"Comi AI 邮箱验证",
-        body=verify_email_template
-        % {"title": f"Comi AI 邮箱验证", "link": link},
+        body=verify_email_template % {"title": f"Comi AI 邮箱验证", "link": link},
     )
 
 
@@ -671,9 +636,7 @@ def verify_password_reset_token(token: str) -> str:
 def verify_email_by_code(code: str) -> str:
     redis = get_redis_connection(
         redis_url=REDIS_URL,
-        redis_sentinels=get_sentinels_from_env(
-            REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT
-        ),
+        redis_sentinels=get_sentinels_from_env(REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT),
         redis_cluster=REDIS_CLUSTER,
     )
     return redis.get(name=get_email_code_key(code=code))

@@ -16,14 +16,13 @@ from open_webui.env import (
 from open_webui.internal.db import Base, get_db
 from open_webui.utils.redis import get_redis_connection, get_sentinels_from_env
 
-
 ####################
 # User Credit DB Schema
 ####################
 
 
 class Credit(Base):
-    __tablename__ = "credit"
+    __tablename__ = 'credit'
 
     id = Column(String, primary_key=True)
     user_id = Column(String, unique=True, nullable=False)
@@ -34,7 +33,7 @@ class Credit(Base):
 
 
 class CreditLog(Base):
-    __tablename__ = "credit_log"
+    __tablename__ = 'credit_log'
 
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True, nullable=False)
@@ -45,7 +44,7 @@ class CreditLog(Base):
 
 
 class TradeTicket(Base):
-    __tablename__ = "trade_ticket"
+    __tablename__ = 'trade_ticket'
 
     id = Column(String, primary_key=True)
     user_id = Column(String, index=True, nullable=False)
@@ -56,7 +55,7 @@ class TradeTicket(Base):
 
 
 class RedemptionCode(Base):
-    __tablename__ = "redemption_code"
+    __tablename__ = 'redemption_code'
 
     code = Column(String, primary_key=True)
     purpose = Column(String, index=True)
@@ -77,7 +76,7 @@ class CreditModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     user_id: str
-    credit: Decimal = Field(default_factory=lambda: Decimal("0"))
+    credit: Decimal = Field(default_factory=lambda: Decimal('0'))
     updated_at: int = Field(default_factory=lambda: int(time.time()))
     created_at: int = Field(default_factory=lambda: int(time.time()))
 
@@ -86,13 +85,13 @@ class CreditLogModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     user_id: str
-    credit: Decimal = Field(default_factory=lambda: Decimal("0"))
+    credit: Decimal = Field(default_factory=lambda: Decimal('0'))
     detail: dict = Field(default_factory=lambda: {})
     created_at: int = Field(default_factory=lambda: int(time.time()))
 
 
 class CreditLogUsage(BaseModel):
-    model_config = ConfigDict(from_attributes=True, extra="allow")
+    model_config = ConfigDict(from_attributes=True, extra='allow')
     total_price: Optional[Decimal] = None
     prompt_unit_price: Optional[Decimal] = None
     completion_unit_price: Optional[Decimal] = None
@@ -116,7 +115,7 @@ class CreditLogSimpleDetailAPIParams(BaseModel):
 
 class CreditLogSimpleDetail(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    desc: str = Field(default_factory=lambda: "")
+    desc: str = Field(default_factory=lambda: '')
     api_params: CreditLogSimpleDetailAPIParams = Field(default_factory=lambda: {})
     usage: CreditLogUsage = Field(default_factory=lambda: {})
 
@@ -124,13 +123,13 @@ class CreditLogSimpleDetail(BaseModel):
 class CreditLogSimpleModel(CreditLogModel):
     model_config = ConfigDict(from_attributes=True)
     detail: CreditLogSimpleDetail
-    username: Optional[str] = Field(default="")
+    username: Optional[str] = Field(default='')
 
 
 class SetCreditFormDetail(BaseModel):
-    api_path: str = Field(default="")
+    api_path: str = Field(default='')
     api_params: dict = Field(default_factory=lambda: {})
-    desc: str = Field(default="")
+    desc: str = Field(default='')
     usage: dict = Field(default_factory=lambda: {})
 
 
@@ -150,13 +149,13 @@ class TradeTicketModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     user_id: str
-    amount: Decimal = Field(default_factory=lambda: Decimal("0"))
+    amount: Decimal = Field(default_factory=lambda: Decimal('0'))
     detail: dict = Field(default_factory=lambda: {})
     created_at: int = Field(default_factory=lambda: int(time.time()))
 
 
 class RedemptionCodeModel(BaseModel):
-    model_config = ConfigDict(from_attributes=True, extra="allow")
+    model_config = ConfigDict(from_attributes=True, extra='allow')
     code: str
     purpose: str
     user_id: Optional[str] = None
@@ -176,9 +175,7 @@ class CreditsTable:
         from open_webui.config import CREDIT_DEFAULT_CREDIT
 
         try:
-            credit_model = CreditModel(
-                user_id=user_id, credit=Decimal(CREDIT_DEFAULT_CREDIT.value)
-            )
+            credit_model = CreditModel(user_id=user_id, credit=Decimal(CREDIT_DEFAULT_CREDIT.value))
             with get_db() as db:
                 result = Credit(**credit_model.model_dump())
                 db.add(result)
@@ -191,12 +188,10 @@ class CreditsTable:
             return None
 
     def init_credit_by_user_id(self, user_id: str) -> CreditModel:
-        credit_model = self.get_credit_by_user_id(
-            user_id=user_id
-        ) or self.insert_new_credit(user_id=user_id)
+        credit_model = self.get_credit_by_user_id(user_id=user_id) or self.insert_new_credit(user_id=user_id)
         if credit_model is not None:
             return credit_model
-        raise HTTPException(status_code=500, detail="credit initialize failed")
+        raise HTTPException(status_code=500, detail='credit initialize failed')
 
     def get_credit_by_user_id(self, user_id: str) -> Optional[CreditModel]:
         try:
@@ -224,7 +219,7 @@ class CreditsTable:
         with get_db() as db:
             db.add(CreditLog(**log.model_dump()))
             db.query(Credit).filter(Credit.user_id == credit_model.user_id).update(
-                {"credit": form_data.credit, "updated_at": int(time.time())},
+                {'credit': form_data.credit, 'updated_at': int(time.time())},
                 synchronize_session=False,
             )
             db.commit()
@@ -241,8 +236,8 @@ class CreditsTable:
             db.add(CreditLog(**log.model_dump()))
             db.query(Credit).filter(Credit.user_id == form_data.user_id).update(
                 {
-                    "credit": Credit.credit + form_data.amount,
-                    "updated_at": int(time.time()),
+                    'credit': Credit.credit + form_data.amount,
+                    'updated_at': int(time.time()),
                 },
                 synchronize_session=False,
             )
@@ -254,9 +249,7 @@ Credits = CreditsTable()
 
 
 class TradeTicketTable:
-    def insert_new_ticket(
-        self, id: str, user_id: str, amount: float, detail: dict
-    ) -> TradeTicketModel:
+    def insert_new_ticket(self, id: str, user_id: str, amount: float, detail: dict) -> TradeTicketModel:
         try:
             ticket = TradeTicketModel(
                 id=id,
@@ -301,16 +294,14 @@ class TradeTicketTable:
 
         try:
             with get_db() as db:
-                db.query(TradeTicket).filter(TradeTicket.id == id).update(
-                    {"detail": detail}
-                )
+                db.query(TradeTicket).filter(TradeTicket.id == id).update({'detail': detail})
                 db.commit()
                 ticket = self.get_ticket_by_id(id)
                 Credits.add_credit_by_user_id(
                     AddCreditForm(
                         user_id=ticket.user_id,
                         amount=ticket.amount * Decimal(CREDIT_EXCHANGE_RATIO.value),
-                        detail=SetCreditFormDetail(desc="payment success"),
+                        detail=SetCreditFormDetail(desc='payment success'),
                     )
                 )
                 return None
@@ -382,14 +373,8 @@ class RedemptionCodeTable:
     def get_code(self, code: str) -> Optional[RedemptionCodeModel]:
         try:
             with get_db() as db:
-                redemption_code = (
-                    db.query(RedemptionCode).filter(RedemptionCode.code == code).first()
-                )
-                return (
-                    RedemptionCodeModel.model_validate(redemption_code)
-                    if redemption_code
-                    else None
-                )
+                redemption_code = db.query(RedemptionCode).filter(RedemptionCode.code == code).first()
+                return RedemptionCodeModel.model_validate(redemption_code) if redemption_code else None
         except Exception:
             return None
 
@@ -410,16 +395,12 @@ class RedemptionCodeTable:
                 query = query.offset(offset)
             if limit:
                 query = query.limit(limit)
-            return total, [
-                RedemptionCodeModel.model_validate(code) for code in query.all()
-            ]
+            return total, [RedemptionCodeModel.model_validate(code) for code in query.all()]
 
     def insert_codes(self, redemption_codes: List[RedemptionCodeModel]) -> None:
         try:
             with get_db() as db:
-                db.add_all(
-                    [RedemptionCode(**code.model_dump()) for code in redemption_codes]
-                )
+                db.add_all([RedemptionCode(**code.model_dump()) for code in redemption_codes])
                 db.commit()
             return None
         except Exception as err:
@@ -428,13 +409,11 @@ class RedemptionCodeTable:
     def update_code(self, code: RedemptionCodeModel) -> None:
         try:
             with get_db() as db:
-                db.query(RedemptionCode).filter(
-                    RedemptionCode.code == code.code
-                ).update(
+                db.query(RedemptionCode).filter(RedemptionCode.code == code.code).update(
                     {
-                        "purpose": code.purpose,
-                        "amount": code.amount,
-                        "expired_at": code.expired_at,
+                        'purpose': code.purpose,
+                        'amount': code.amount,
+                        'expired_at': code.expired_at,
                     }
                 )
                 db.commit()
@@ -457,34 +436,29 @@ class RedemptionCodeTable:
             # load code
             redemption_code = self.get_code(code)
             if redemption_code is None:
-                raise HTTPException(status_code=404, detail="Code not found")
+                raise HTTPException(status_code=404, detail='Code not found')
             # check if code is received
             if redemption_code.user_id is not None:
-                raise HTTPException(status_code=400, detail="Code already received")
+                raise HTTPException(status_code=400, detail='Code already received')
             # check expired
             now = int(time.time())
-            if (
-                redemption_code.expired_at is not None
-                and redemption_code.expired_at < now
-            ):
-                raise HTTPException(status_code=400, detail="Code expired")
+            if redemption_code.expired_at is not None and redemption_code.expired_at < now:
+                raise HTTPException(status_code=400, detail='Code expired')
             # concurrency control
-            cache_key = f"redemption_code:{code}"
+            cache_key = f'redemption_code:{code}'
             redis = get_redis_connection(
                 redis_url=REDIS_URL,
-                redis_sentinels=get_sentinels_from_env(
-                    REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT
-                ),
+                redis_sentinels=get_sentinels_from_env(REDIS_SENTINEL_HOSTS, REDIS_SENTINEL_PORT),
                 redis_cluster=REDIS_CLUSTER,
             )
             if not redis.set(cache_key, cache_key, nx=True, ex=60):
-                raise HTTPException(status_code=400, detail="Too many requests")
+                raise HTTPException(status_code=400, detail='Too many requests')
             # receive
             with get_db() as db:
                 db.query(RedemptionCode).filter(RedemptionCode.code == code).update(
                     {
-                        "user_id": user_id,
-                        "received_at": int(time.time()),
+                        'user_id': user_id,
+                        'received_at': int(time.time()),
                     }
                 )
                 db.commit()
@@ -492,9 +466,7 @@ class RedemptionCodeTable:
                 AddCreditForm(
                     user_id=user_id,
                     amount=redemption_code.amount,
-                    detail=SetCreditFormDetail(
-                        desc="redemption code received", api_params={"code": code}
-                    ),
+                    detail=SetCreditFormDetail(desc='redemption code received', api_params={'code': code}),
                 )
             )
             return

@@ -13,19 +13,19 @@ from open_webui.config import (
 
 def send_email(receiver: str, subject: str, body: str):
     message = MIMEMultipart()
-    message["From"] = SMTP_SENT_FROM.value or SMTP_USERNAME.value
-    message["To"] = receiver
-    message["Subject"] = subject
-    message.attach(MIMEText(body, "html"))
+    message['From'] = SMTP_SENT_FROM.value or SMTP_USERNAME.value
+    message['To'] = receiver
+    message['Subject'] = subject
+    message.attach(MIMEText(body, 'html'))
 
     port = str(SMTP_PORT.value)
-    if port == "587":
+    if port == '587':
         server = smtplib.SMTP(SMTP_HOST.value, int(port))
         server.starttls()
-    elif port == "465":
+    elif port == '465':
         server = smtplib.SMTP_SSL(SMTP_HOST.value, int(port))
     else:
-        raise ValueError(f"Invalid SMTP port {port}")
+        raise ValueError(f'Invalid SMTP port {port}')
 
     try:
         server.login(SMTP_USERNAME.value, SMTP_PASSWORD.value)
